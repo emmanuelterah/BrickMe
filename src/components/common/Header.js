@@ -55,7 +55,7 @@ export default function Header({ onMicClick }) {
               <button className="sign-up" onClick={() => { logout(); navigate('/'); }}>Logout</button>
             </>
           ) : (
-            <Link to="/auth"><button className="sign-up">Sign Up / Sign In</button></Link>
+            <Link to="/auth"><button className="sign-up">Sign Up</button></Link>
           )}
           <button className="mic-nav" onClick={onMicClick} aria-label="Voice Assistant">
             <span role="img" aria-label="microphone">🎤</span>

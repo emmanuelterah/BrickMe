@@ -495,7 +495,7 @@ function DashboardPage() {
   };
 
   return (
-    <div className="dashboard-layout">
+    <div className={`dashboard-layout theme-${theme}`}>
       <Sidebar
         user={user}
         onSelect={setSelectedSection}

@@ -1,6 +1,6 @@
 .dashboard-root {
   min-height: 100vh;
-  background: linear-gradient(135deg, #e6f7ff 0%, #fffbe6 100%);
+  background: var(--bg);
   display: flex;
   flex-direction: column;
 }
@@ -8,8 +8,8 @@
   width: 100%;
   min-width: 0;
   max-width: 100vw;
-  background: linear-gradient(90deg, #ffcf00 60%, #ffe066 100%);
-  box-shadow: 0 2px 12px #ffcf0033;
+  background: var(--bg);
+  box-shadow: 0 2px 12px var(--accent, #ffcf0033);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -32,7 +32,7 @@
 .dashboard-navbar-title {
   font-size: 1.35rem;
   font-weight: 900;
-  color: #e53d00;
+  color: var(--accent);
   letter-spacing: 0.01em;
 }
 .dashboard-navbar-center {
@@ -220,10 +220,11 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  background: #f6f6f6;
+  background: var(--card);
   min-height: 100vh;
   height: auto;
   overflow-y: auto;
+  color: var(--text);
 }
 .dashboard-main-content {
   width: 100%;
@@ -950,7 +951,7 @@
 }
 .dashboard-sidebar {
   width: 240px;
-  background: linear-gradient(180deg, #ffe259 0%, #ffa751 100%);
+  background: var(--card);
   box-shadow: 2px 0 8px rgba(0,0,0,0.07);
   display: flex;
   flex-direction: column;
@@ -960,6 +961,7 @@
   overflow-y: auto;
   min-height: 100vh;
   height: auto;
+  color: var(--text);
 }
 .sidebar-user {
   display: flex;
@@ -968,6 +970,7 @@
   padding: 2rem 0 1rem 0;
   background: rgba(255,255,255,0.18);
   border-bottom: 1px solid #ffe259;
+  color: var(--accent);
 }
 .sidebar-avatar {
   width: 64px;
@@ -980,7 +983,7 @@
 }
 .sidebar-username {
   font-weight: bold;
-  color: #e53d00;
+  color: var(--accent);
   font-size: 1.1rem;
   margin-bottom: 0.2rem;
 }
@@ -991,19 +994,19 @@
   padding: 2rem 1rem 1rem 1rem;
 }
 .sidebar-nav button {
-  background: none;
+  background: transparent;
   border: none;
   text-align: left;
   font-size: 1.08rem;
   padding: 0.7rem 1rem;
   border-radius: 8px;
-  color: #333;
+  color: var(--text);
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
 }
 .sidebar-nav button.active, .sidebar-nav button:hover:not(.disabled) {
-  background: #fffbe7;
-  color: #e53d00;
+  background: var(--accent);
+  color: var(--card);
   font-weight: bold;
 }
 .sidebar-nav button.disabled {
