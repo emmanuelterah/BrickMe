@@ -8,8 +8,8 @@ import Sidebar from '../components/dashboard/Sidebar';
 import HomeSection from '../components/dashboard/HomeSection';
 import LegoFySection from '../components/dashboard/LegoFySection';
 import MosaicSection from '../components/dashboard/MosaicSection';
-import AiSection from '../components/dashboard/AiSection';
 import SettingsSection from '../components/dashboard/SettingsSection';
+import VoiceAiChat from '../components/dashboard/voice/VoiceAiChat';
 
 function DashboardPage() {
   const { user, setUser, logout } = useContext(AuthContext);
@@ -26,11 +26,6 @@ function DashboardPage() {
     { value: 'lego', label: 'Lego' },
     { value: 'ocean', label: 'Ocean' },
   ];
-  // AI Chat state
-  const [aiPrompt, setAiPrompt] = useState('');
-  const [aiResponse, setAiResponse] = useState('');
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiError, setAiError] = useState('');
   // Image upload and Lego-fy state
   const [uploadedImage, setUploadedImage] = useState(null);
   const [uploadedFileName, setUploadedFileName] = useState('');
@@ -60,6 +55,9 @@ function DashboardPage() {
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [croppedPreview, setCroppedPreview] = useState(null);
   const [avatarVersion, setAvatarVersion] = useState(Date.now());
+  const [mosaicUploadedImage, setMosaicUploadedImage] = useState(null);
+  const [mosaicUploadedFileName, setMosaicUploadedFileName] = useState('');
+  const [mosaicLoading, setMosaicLoading] = useState(false);
 
   // Close dropdown on outside click, but not when clicking the user slot or inside dropdown
   useEffect(() => {
@@ -129,33 +127,6 @@ function DashboardPage() {
     } catch (err) {
       setThemeMsg('Theme update failed');
     }
-  };
-
-  const handleAiChat = async (e) => {
-    e.preventDefault();
-    setAiLoading(true);
-    setAiError('');
-    setAiResponse('');
-    const token = localStorage.getItem('token');
-    try {
-      const res = await fetch('/api/ai/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ prompt: aiPrompt }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setAiResponse(data.response);
-      } else {
-        setAiError(data.message || 'AI request failed');
-      }
-    } catch (err) {
-      setAiError('AI request failed');
-    }
-    setAiLoading(false);
   };
 
   // Voice recognition logic with live transcription
@@ -233,7 +204,7 @@ function DashboardPage() {
   // Fix logout: redirect after logout
   const handleLogout = () => {
     logout();
-    navigate('/auth');
+    navigate('/');
   };
 
   // LEGO color palette (sample, can be expanded)
@@ -266,60 +237,95 @@ function DashboardPage() {
 
   // Improved pixelate function with LEGO color mapping
   const createMosaic = () => {
-    if (!legoImage) return;
+    if (!legoImage) {
+      console.log('No legoImage set!', legoImage);
+      setMosaicLoading(false);
+      return;
+    }
+    console.log('legoImage type:', typeof legoImage, 'value:', legoImage && legoImage.slice ? legoImage.slice(0, 100) : legoImage);
+    setMosaicLoading(true);
+
+    const MAX_BRICKS = 128;
+    const blockSize = 16; // Size of each LEGO block in pixels (for output)
     const img = new window.Image();
     img.crossOrigin = 'Anonymous';
     img.onload = () => {
-      const size = 24; // Mosaic grid size
-      const canvas = document.createElement('canvas');
-      canvas.width = size;
-      canvas.height = size;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, size, size);
-      // Get color data and count LEGO colors
+      // Calculate grid size based on aspect ratio
+      const { naturalWidth, naturalHeight } = img;
+      let gridWidth, gridHeight;
+      if (naturalWidth >= naturalHeight) {
+        gridWidth = MAX_BRICKS;
+        gridHeight = Math.round(MAX_BRICKS * (naturalHeight / naturalWidth));
+      } else {
+        gridHeight = MAX_BRICKS;
+        gridWidth = Math.round(MAX_BRICKS * (naturalWidth / naturalHeight));
+      }
+      console.log('Grid size:', gridWidth, 'x', gridHeight);
+      // Prepare canvases
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = gridWidth;
+      tempCanvas.height = gridHeight;
+      const tempCtx = tempCanvas.getContext('2d');
+      const outputCanvas = document.createElement('canvas');
+      outputCanvas.width = gridWidth * blockSize;
+      outputCanvas.height = gridHeight * blockSize;
+      const outputCtx = outputCanvas.getContext('2d');
+      // Draw image to temp canvas
+      tempCtx.clearRect(0, 0, gridWidth, gridHeight);
+      tempCtx.drawImage(img, 0, 0, gridWidth, gridHeight);
+      // Get all pixel data at once
+      const imageData = tempCtx.getImageData(0, 0, gridWidth, gridHeight).data;
       const colorCounts = {};
       const legoGrid = [];
-      for (let y = 0; y < size; y++) {
+      for (let y = 0; y < gridHeight; y++) {
         legoGrid[y] = [];
-        for (let x = 0; x < size; x++) {
-          const [r, g, b] = ctx.getImageData(x, y, 1, 1).data;
+        for (let x = 0; x < gridWidth; x++) {
+          const idx = (y * gridWidth + x) * 4;
+          const r = imageData[idx];
+          const g = imageData[idx + 1];
+          const b = imageData[idx + 2];
           const legoColor = closestLegoColor(r, g, b);
           legoGrid[y][x] = legoColor;
           colorCounts[legoColor.name] = (colorCounts[legoColor.name] || 0) + 1;
         }
       }
-      // Draw LEGO mosaic with grid overlay
-      const gridColor = 'rgba(0,0,0,0.15)';
-      for (let y = 0; y < size; y++) {
-        for (let x = 0; x < size; x++) {
+      // Draw mosaic
+      outputCtx.clearRect(0, 0, outputCanvas.width, outputCanvas.height);
+      for (let y = 0; y < gridHeight; y++) {
+        for (let x = 0; x < gridWidth; x++) {
           const { rgb } = legoGrid[y][x];
-          ctx.fillStyle = `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
-          ctx.fillRect(x * 10, y * 10, 10, 10);
+          outputCtx.fillStyle = `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+          outputCtx.fillRect(x * blockSize, y * blockSize, blockSize, blockSize);
         }
       }
       // Draw grid lines
-      ctx.strokeStyle = gridColor;
-      ctx.lineWidth = 1;
-      for (let i = 0; i <= size; i++) {
-        // Vertical lines
-        ctx.beginPath();
-        ctx.moveTo(i * 10, 0);
-        ctx.lineTo(i * 10, size * 10);
-        ctx.stroke();
-        // Horizontal lines
-        ctx.beginPath();
-        ctx.moveTo(0, i * 10);
-        ctx.lineTo(size * 10, i * 10);
-        ctx.stroke();
+      outputCtx.strokeStyle = 'rgba(0,0,0,0.15)';
+      outputCtx.lineWidth = 1;
+      for (let i = 0; i <= gridWidth; i++) {
+        outputCtx.beginPath();
+        outputCtx.moveTo(i * blockSize, 0);
+        outputCtx.lineTo(i * blockSize, gridHeight * blockSize);
+        outputCtx.stroke();
+      }
+      for (let i = 0; i <= gridHeight; i++) {
+        outputCtx.beginPath();
+        outputCtx.moveTo(0, i * blockSize);
+        outputCtx.lineTo(gridWidth * blockSize, i * blockSize);
+        outputCtx.stroke();
       }
       setMosaicData({
-        mosaicUrl: canvas.toDataURL(),
+        mosaicUrl: outputCanvas.toDataURL(),
         partsList: Object.entries(colorCounts).map(([name, count]) => {
           const color = LEGO_COLORS.find(c => c.name === name);
           return { name, count, rgb: color.rgb };
         }),
       });
       setShowMosaic(true);
+      setMosaicLoading(false);
+    };
+    img.onerror = (e) => {
+      console.error('Image failed to load', e);
+      setMosaicLoading(false);
     };
     img.src = legoImage;
   };
@@ -475,6 +481,17 @@ function DashboardPage() {
     setMessage('');
   };
 
+  // Mosaic image upload handler
+  const handleMosaicImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setMosaicUploadedImage(file);
+      setMosaicUploadedFileName(file.name);
+      setShowMosaic(false);
+      setMosaicData({ mosaicUrl: '', partsList: [] });
+    }
+  };
+
   return (
     <div className="dashboard-layout">
       <Sidebar
@@ -514,18 +531,26 @@ function DashboardPage() {
         )}
         {selectedSection === 'mosaic' && (
           <MosaicSection
+            uploadedImage={mosaicUploadedImage}
+            uploadedFileName={mosaicUploadedFileName}
+            handleImageChange={handleMosaicImageChange}
+            createMosaic={() => {
+              if (!mosaicUploadedImage) return;
+              setMosaicLoading(true);
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                const tempImg = e.target.result;
+                setLegoImage(tempImg);
+                setTimeout(() => createMosaic(), 0);
+              };
+              reader.readAsDataURL(mosaicUploadedImage);
+            }}
             mosaicData={mosaicData}
-            createMosaic={createMosaic}
-          />
-        )}
-        {selectedSection === 'ai' && (
-          <AiSection
-            aiPrompt={aiPrompt}
-            setAiPrompt={setAiPrompt}
-            aiLoading={aiLoading}
-            aiError={aiError}
-            aiResponse={aiResponse}
-            handleAiChat={handleAiChat}
+            showMosaic={showMosaic}
+            handleDownloadPNG={handleDownloadPNG}
+            handleDownloadPDF={handleDownloadPDF}
+            setShowMosaic={setShowMosaic}
+            mosaicLoading={mosaicLoading}
           />
         )}
         {selectedSection === 'settings' && (
@@ -554,6 +579,9 @@ function DashboardPage() {
             handleCropSave={handleCropSave}
             handleCropCancel={handleCropCancel}
           />
+        )}
+        {selectedSection === 'voice-ai' && (
+          <VoiceAiChat />
         )}
       </main>
     </div>
