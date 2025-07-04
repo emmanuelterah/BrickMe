@@ -1,9 +1,13 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useContext } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import "./Header.css";
+import { AuthContext } from '../../context/AuthContext';
 
 export default function Header({ onMicClick }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { user, logout } = useContext(AuthContext);
+  const navigate = useNavigate();
+
   return (
     <header className="header">
       <nav className="navbar">
@@ -31,14 +35,28 @@ export default function Header({ onMicClick }) {
           <li><Link to="/pricing">Pricing</Link></li>
           <li><Link to="/contact">Contact</Link></li>
           <li className="mobile-auth">
-            <button className="sign-up">Sign Up</button>
+            {user ? (
+              <>
+                <Link to="/dashboard"><button className="sign-up">Dashboard</button></Link>
+                <button className="sign-up" onClick={() => { logout(); navigate('/'); }}>Logout</button>
+              </>
+            ) : (
+              <Link to="/auth"><button className="sign-up">Sign Up / Sign In</button></Link>
+            )}
             <button className="mic-nav" onClick={onMicClick} aria-label="Voice Assistant">
               <span role="img" aria-label="microphone">🎤</span>
             </button>
           </li>
         </ul>
         <div className="auth-actions desktop-auth">
-          <button className="sign-up">Sign Up</button>
+          {user ? (
+            <>
+              <Link to="/dashboard"><button className="sign-up">Dashboard</button></Link>
+              <button className="sign-up" onClick={() => { logout(); navigate('/'); }}>Logout</button>
+            </>
+          ) : (
+            <Link to="/auth"><button className="sign-up">Sign Up / Sign In</button></Link>
+          )}
           <button className="mic-nav" onClick={onMicClick} aria-label="Voice Assistant">
             <span role="img" aria-label="microphone">🎤</span>
           </button>
