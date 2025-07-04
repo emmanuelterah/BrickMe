@@ -194,9 +194,11 @@ function DashboardPage() {
         setLegoImage(data.legoImageUrl);
       } else {
         setLegoImage(null);
+        setMessage(data.message || 'Failed to generate LEGO-fied image');
       }
     } catch (err) {
       setLegoImage(null);
+      setMessage('Failed to generate LEGO-fied image');
     }
     setLegoLoading(false);
   };
@@ -581,7 +583,7 @@ function DashboardPage() {
           />
         )}
         {selectedSection === 'voice-ai' && (
-          <VoiceAiChat />
+          <VoiceAiChat legoAvatar={legoImage} user={user} />
         )}
       </main>
     </div>

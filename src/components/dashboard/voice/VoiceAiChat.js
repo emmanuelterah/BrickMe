@@ -36,7 +36,7 @@ const getBestVoice = (voices) => {
   return enVoice || voices[0];
 };
 
-const VoiceAiChat = () => {
+const VoiceAiChat = ({ legoAvatar, user }) => {
   const [messages, setMessages] = useState([]); // {role: 'user'|'ai', text: ''}
   const [recording, setRecording] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
@@ -198,19 +198,19 @@ const VoiceAiChat = () => {
         alignItems: 'center',
         justifyContent: 'center',
         position: 'relative',
-        borderRight: '4px solid #ffe066',
-        minHeight: '80vh',
-        boxShadow: '4px 0 24px -8px #ffe06644',
       }}>
-        <AiAvatar speaking={aiSpeaking} thinking={aiLoading} large />
-        <div style={{ marginTop: 32, fontWeight: 700, fontSize: 28, color: '#e53d00', textShadow: '0 2px 8px #fffbe7' }}>
-          Lego AI
+        {legoAvatar ? (
+          <img
+            src={legoAvatar}
+            alt="LEGO-fied Avatar"
+            style={{ width: 220, height: 220, borderRadius: '50%', border: '6px solid #ffe066', boxShadow: '0 4px 32px #ffe06688', objectFit: 'cover', background: '#fffbe7' }}
+          />
+        ) : (
+          <AiAvatar large speaking={aiSpeaking} thinking={aiLoading} />
+        )}
+        <div style={{ marginTop: 18, fontWeight: 700, fontSize: 22, color: '#e53d00', textAlign: 'center' }}>
+          {user?.profile?.name || user?.email || 'You'}
         </div>
-        <div style={{ marginTop: 12, fontSize: 18, color: '#333', opacity: 0.7 }}>
-          {aiSpeaking ? 'Speaking...' : aiLoading ? 'Thinking...' : recording ? 'Listening...' : ''}
-        </div>
-        {/* Subtle LEGO brick pattern */}
-        <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: 80, opacity: 0.12, background: 'url("/lego-brick-pattern.svg") repeat-x' }} />
       </div>
       {/* Right: Chat Area */}
       <div style={{
