@@ -156,7 +156,7 @@ h1 {
   .glass-card {
     padding: 1.2rem 0.7rem;
   }
-}
+} 
 
 @media (max-width: 600px) {
   .cta-buttons {

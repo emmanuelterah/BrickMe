@@ -142,7 +142,7 @@ img {
 .cta.download:hover:not(:disabled), .cta.share:hover:not(:disabled) {
   transform: translateY(-4px) scale(1.05) rotate(-2deg);
   box-shadow: 0 8px #0077b6;
-}
+} 
 
 @media (max-width: 600px) {
   .preview-images {
