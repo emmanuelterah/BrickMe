@@ -1,9 +1,8 @@
 import React from "react";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
-import "../components/AboutSection.css";
+import Header from "../components/common/Header";
+import Footer from "../components/common/Footer";
+import "../components/sections/AboutSection.css";
 import { Helmet } from "react-helmet-async";
-import LegoBrickAnimation from "../components/LegoBrickAnimation";
 
 export default function AboutPage() {
   return (
@@ -14,7 +13,6 @@ export default function AboutPage() {
       </Helmet>
       <Header />
       <main>
-        <LegoBrickAnimation />
         <section className="about-section fire-section">
           <div className="about-content">
             <h1 className="fire-h1">About <span className="lego-accent">BrickMe</span></h1>

@@ -1,7 +1,7 @@
 import React from "react";
 import "./HeroSection.css";
-import beforeImg from "../images/lego1.jpg";
-import afterImg from "../images/lego2.jpg";
+import img1 from "../../images/lego1.jpg";
+import img2 from "../../images/lego2.jpg";
 
 function LegoStud({ color = "#ffcf00" }) {
   return (
@@ -60,13 +60,13 @@ export default function HeroSection() {
       <div className="hero-image glass-card">
         <div className="animated-img-premium">
           <img
-            src={beforeImg}
+            src={img1}
             alt="Sample Portrait"
             className="portrait-img"
           />
           <div className="lego-mosaic-container">
             <img
-              src={afterImg}
+              src={img2}
               alt="LEGO Mosaic Example"
               className="lego-art-img"
             />

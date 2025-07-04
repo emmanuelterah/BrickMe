@@ -1,10 +1,9 @@
 import React from "react";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
-import "../components/PricingSection.css";
+import Header from "../components/common/Header";
+import Footer from "../components/common/Footer";
+import "../components/sections/PricingSection.css";
 import { Helmet } from "react-helmet-async";
-import LegoBrickAnimation from "../components/LegoBrickAnimation";
-import LegoButton from "../components/LegoButton";
+import LegoButton from "../components/common/LegoButton";
 
 const plans = [
   {
@@ -36,7 +35,6 @@ export default function PricingPage() {
       </Helmet>
       <Header />
       <main>
-        <LegoBrickAnimation />
         <section className="pricing-section fire-section">
           <h1 className="fire-h1">Pricing</h1>
           <div className="pricing-cards">

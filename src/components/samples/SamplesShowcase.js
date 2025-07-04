@@ -1,8 +1,8 @@
 import React from "react";
 import "./SamplesShowcase.css";
-import img1 from "../images/lego1.jpg";
-import img2 from "../images/lego2.jpg";
-import img3 from "../images/lego3.jpg";
+import img1 from "../../images/lego1.jpg";
+import img2 from "../../images/lego2.jpg";
+import img3 from "../../images/lego3.jpg";
 
 const samples = [
   {

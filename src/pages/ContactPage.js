@@ -1,10 +1,8 @@
 import React from "react";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
-import "../components/ContactSection.css";
+import Header from "../components/common/Header";
+import Footer from "../components/common/Footer";
+import "../components/sections/ContactSection.css";
 import { Helmet } from "react-helmet-async";
-import LegoBrickAnimation from "../components/LegoBrickAnimation";
-import LegoButton from "../components/LegoButton";
 
 export default function ContactPage() {
   return (
@@ -15,14 +13,13 @@ export default function ContactPage() {
       </Helmet>
       <Header />
       <main>
-        <LegoBrickAnimation />
         <section className="contact-section fire-section">
           <h1 className="fire-h1">Contact <span className="lego-accent">BrickMe</span></h1>
           <form className="contact-form">
             <input type="text" placeholder="Your Name" required />
             <input type="email" placeholder="Your Email" required />
             <textarea placeholder="Your Message" rows={4} required />
-            <LegoButton type="submit">Send Message</LegoButton>
+            <button type="submit">Send Message</button>
           </form>
         </section>
       </main>

@@ -1,9 +1,8 @@
 import React from "react";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
-import "../components/HowItWorksSection.css";
+import Header from "../components/common/Header";
+import Footer from "../components/common/Footer";
+import "../components/sections/HowItWorksSection.css";
 import { Helmet } from "react-helmet-async";
-import LegoBrickAnimation from "../components/LegoBrickAnimation";
 
 const steps = [
   {
@@ -37,7 +36,6 @@ export default function HowItWorksPage() {
       </Helmet>
       <Header />
       <main>
-        <LegoBrickAnimation />
         <section className="how-section fire-section">
           <h1 className="fire-h1">How It Works</h1>
           <div className="how-steps">

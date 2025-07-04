@@ -43,7 +43,6 @@ const BRICKS = [
 export default function BackgroundBricks() {
   const [parallax, setParallax] = useState({ x: 0, y: 0 });
   const [assembled, setAssembled] = useState(false);
-  const requestRef = useRef();
 
   useEffect(() => {
     setTimeout(() => setAssembled(true), 200); // Delay for assembly animation

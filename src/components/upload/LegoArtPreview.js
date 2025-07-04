@@ -1,7 +1,7 @@
 import React from "react";
 import "./LegoArtPreview.css";
-import beforeImgDefault from "../images/lego1.jpg";
-import afterImgDefault from "../images/lego3.jpg";
+import img1 from "../../images/lego1.jpg";
+import img3 from "../../images/lego3.jpg";
 
 function LegoStudsRow({ count = 7, color = "#ffcf00" }) {
   return (
@@ -46,8 +46,8 @@ function LegoMosaicOverlay() {
 
 export default function LegoArtPreview({ originalImage, legoArt, setLegoArt }) {
   // Use local images as default placeholders
-  const beforeImg = originalImage || beforeImgDefault;
-  const afterImg = legoArt || afterImgDefault;
+  const beforeImg = originalImage || img1;
+  const afterImg = legoArt || img3;
   return (
     <section className="glass-card lego-art-preview">
       <LegoStudsRow />
