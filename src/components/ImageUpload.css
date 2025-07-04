@@ -1,0 +1,61 @@
+.glass-card.image-upload-card {
+  max-width: 480px;
+  margin: 2.5rem auto 2.5rem auto;
+  padding: 0 0 2.2rem 0;
+  border-radius: 2.2rem;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.10), 0 1.5px 0 #ffcf00;
+  background: rgba(255,255,255,0.7);
+  backdrop-filter: blur(8px) saturate(1.2);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.lego-studs-row {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  margin-top: -18px;
+  margin-bottom: 0.5rem;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.lego-upload-area {
+  margin: 0 auto;
+  max-width: 420px;
+  min-height: 140px;
+  background: #fffbe7cc;
+  border-radius: 1.5rem;
+  border: 2.5px solid #ffcf00;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 24px rgba(255,207,0,0.10);
+  transition: background 0.22s, box-shadow 0.22s, transform 0.22s;
+  position: relative;
+  outline: none;
+}
+
+.lego-upload-area:hover, .lego-upload-area:active {
+  background: #ffe259ee;
+  box-shadow: 0 8px 32px rgba(255,207,0,0.18);
+  transform: scale(1.03) rotate(-1deg);
+}
+
+.upload-instructions {
+  font-size: 1.3rem;
+  color: #e53d00;
+  font-weight: bold;
+  text-align: center;
+  padding: 1.5rem 1rem;
+  user-select: none;
+}
+
+.upload-link {
+  color: #00b4d8;
+  text-decoration: underline;
+  cursor: pointer;
+} 

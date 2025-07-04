@@ -1,0 +1,39 @@
+.gallery-section {
+  background: #fffbe7;
+  border-radius: 2rem;
+  margin: 3rem auto 2rem auto;
+  max-width: 1000px;
+  box-shadow: 0 4px 24px rgba(255,207,0,0.10);
+  padding: 2.5rem 2rem;
+  text-align: center;
+}
+
+.gallery-section h2 {
+  font-size: 2.2rem;
+  color: #e53d00;
+  font-family: 'Poppins', 'Comic Sans MS', 'Comic Sans', cursive;
+  margin-bottom: 2rem;
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 2rem;
+  justify-items: center;
+}
+
+.gallery-grid img {
+  width: 220px;
+  height: 220px;
+  object-fit: cover;
+  border-radius: 1.2rem;
+  box-shadow: 0 2px 12px rgba(255,207,0,0.10);
+  border: 3px solid #ffcf00;
+  background: #fff;
+  transition: transform 0.18s, box-shadow 0.18s;
+}
+
+.gallery-grid img:hover {
+  transform: scale(1.07) rotate(-2deg);
+  box-shadow: 0 8px 32px rgba(255,207,0,0.18);
+} 

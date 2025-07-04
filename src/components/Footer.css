@@ -1,0 +1,158 @@
+.footer-main {
+  background: #ffe259;
+  color: #e53d00;
+  padding: 2.5rem 1.5rem 1rem 1.5rem;
+  border-top: 3px solid #ffcf00;
+  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+}
+
+.footer-main.glass-card {
+  background: rgba(255, 226, 89, 0.85);
+  color: #e53d00;
+  padding: 2.5rem 1.5rem 1rem 1.5rem;
+  border-top: 3px solid #ffcf00;
+  font-family: 'Poppins', 'Comic Sans MS', 'Comic Sans', cursive;
+  border-radius: 2.2rem 2.2rem 0 0;
+  box-shadow: 0 -8px 32px rgba(0,0,0,0.08), 0 1.5px 0 #ffcf00;
+  backdrop-filter: blur(8px) saturate(1.2);
+  margin-top: 3rem;
+}
+
+.footer-content {
+  display: flex;
+  justify-content: space-between;
+  gap: 2.5rem;
+  max-width: 1200px;
+  margin: 0 auto 1.2rem auto;
+  flex-wrap: wrap;
+}
+
+.footer-col {
+  flex: 1 1 180px;
+  min-width: 180px;
+  margin-bottom: 1.2rem;
+}
+
+.footer-col h3, .footer-col h4 {
+  color: #e53d00;
+  margin-bottom: 0.7em;
+  font-size: 1.2em;
+  font-weight: 900;
+}
+
+.footer-col ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-col ul li {
+  margin-bottom: 0.5em;
+}
+
+.footer-col ul li a {
+  color: #e53d00;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.18s;
+}
+
+.footer-col ul li a:hover {
+  color: #00b4d8;
+}
+
+.social-icons {
+  display: flex;
+  gap: 0.7em;
+  margin-bottom: 0.7em;
+}
+
+.icon {
+  width: 2.3em;
+  height: 2.3em;
+  border-radius: 50%;
+  background: #fffbe7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(255,207,0,0.10), 0 2px #e53d00;
+  transition: background 0.18s, color 0.18s, transform 0.18s, box-shadow 0.18s;
+  cursor: pointer;
+  border: 2px solid #ffcf00;
+}
+
+.icon svg {
+  display: block;
+}
+
+.icon.ig:hover { background: #e1306c; }
+.icon.x:hover { background: #222; }
+.icon.yt:hover { background: #ff0000; }
+.icon.tiktok:hover { background: #00f2ea; }
+.icon.li:hover { background: #0077b5; }
+
+.icon.ig:hover svg *,
+.icon.x:hover svg *,
+.icon.yt:hover svg *,
+.icon.tiktok:hover svg *,
+.icon.li:hover svg * {
+  stroke: #fff;
+  fill: #fff;
+}
+
+.newsletter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  margin-top: 0.5em;
+  align-items: stretch;
+}
+
+.newsletter input[type="email"] {
+  border: none;
+  border-radius: 2em;
+  padding: 0.5em 1.2em;
+  font-size: 1em;
+  background: #fffbe7;
+  color: #e53d00;
+  box-shadow: 0 2px #ffcf00;
+  outline: none;
+  margin-bottom: 0.3em;
+}
+
+.newsletter button {
+  font-size: 1em;
+  font-weight: bold;
+  border: none;
+  border-radius: 2em;
+  padding: 0.5em 1.2em;
+  background: linear-gradient(90deg, #00b4d8 60%, #48cae4 100%);
+  color: #fff;
+  box-shadow: 0 2px #0077b6;
+  cursor: pointer;
+  transition: background 0.18s, transform 0.18s;
+  font-family: 'Poppins', 'Inter', 'Comic Sans MS', 'Comic Sans', cursive;
+  margin-top: 0.2em;
+}
+
+.newsletter button:hover {
+  background: linear-gradient(90deg, #48cae4 60%, #00b4d8 100%);
+  transform: scale(1.08);
+}
+
+.footer-bottom {
+  text-align: center;
+  color: #e53d00;
+  font-size: 1.05em;
+  font-weight: 700;
+  margin-top: 1.2em;
+  letter-spacing: 0.5px;
+}
+
+@media (max-width: 900px) {
+  .footer-content {
+    flex-direction: column;
+    gap: 1.5rem;
+    align-items: flex-start;
+  }
+} 

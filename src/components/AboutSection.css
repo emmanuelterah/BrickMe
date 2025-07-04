@@ -1,0 +1,31 @@
+.about-section {
+  background: #fffbe7;
+  border-radius: 2rem;
+  margin: 3rem auto 2rem auto;
+  max-width: 900px;
+  box-shadow: 0 4px 24px rgba(255,207,0,0.10);
+  padding: 2.5rem 2rem;
+  text-align: center;
+}
+
+.about-content h2 {
+  font-size: 2.2rem;
+  color: #e53d00;
+  font-family: 'Poppins', 'Comic Sans MS', 'Comic Sans', cursive;
+  margin-bottom: 1rem;
+}
+
+.lego-accent {
+  background: #ffcf00;
+  color: #e53d00;
+  border-radius: 0.5em;
+  padding: 0.1em 0.5em;
+  box-shadow: 0 2px #e53d00;
+}
+
+.about-content p {
+  font-size: 1.18rem;
+  color: #22223b;
+  margin: 0 auto;
+  max-width: 600px;
+} 
