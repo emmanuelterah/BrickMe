@@ -3,6 +3,7 @@ import Header from "../components/common/Header";
 import Footer from "../components/common/Footer";
 import "../components/sections/ContactSection.css";
 import { Helmet } from "react-helmet-async";
+import LegoButton from "../components/common/LegoButton";
 
 export default function ContactPage() {
   return (
@@ -19,7 +20,7 @@ export default function ContactPage() {
             <input type="text" placeholder="Your Name" required />
             <input type="email" placeholder="Your Email" required />
             <textarea placeholder="Your Message" rows={4} required />
-            <button type="submit">Send Message</button>
+            <LegoButton type="submit">Send Message</LegoButton>
           </form>
         </section>
       </main>
