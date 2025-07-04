@@ -30,8 +30,14 @@ export default function Header({ onMicClick }) {
           <li><Link to="/gallery">Gallery</Link></li>
           <li><Link to="/pricing">Pricing</Link></li>
           <li><Link to="/contact">Contact</Link></li>
+          <li className="mobile-auth">
+            <button className="sign-up">Sign Up</button>
+            <button className="mic-nav" onClick={onMicClick} aria-label="Voice Assistant">
+              <span role="img" aria-label="microphone">🎤</span>
+            </button>
+          </li>
         </ul>
-        <div className="auth-actions">
+        <div className="auth-actions desktop-auth">
           <button className="sign-up">Sign Up</button>
           <button className="mic-nav" onClick={onMicClick} aria-label="Voice Assistant">
             <span role="img" aria-label="microphone">🎤</span>

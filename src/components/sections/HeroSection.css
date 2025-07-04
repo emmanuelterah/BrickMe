@@ -156,4 +156,20 @@ h1 {
   .glass-card {
     padding: 1.2rem 0.7rem;
   }
+}
+
+@media (max-width: 600px) {
+  .cta-buttons {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+  .cta-buttons .lego-btn {
+    width: 100%;
+    font-size: 1.1rem;
+    padding: 1.1em 0;
+    border-radius: 1.5em;
+    min-width: 0;
+    margin: 0;
+  }
 } 
