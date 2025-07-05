@@ -16,6 +16,9 @@ export function AuthProvider({ children }) {
         .then(res => res.ok ? res.json() : null)
         .then(data => {
           setUser(data || null);
+          if (data && data._id && !localStorage.getItem('userId')) {
+            localStorage.setItem('userId', data._id);
+          }
           setLoading(false);
         })
         .catch(() => setLoading(false));
@@ -30,11 +33,17 @@ export function AuthProvider({ children }) {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(res => res.ok ? res.json() : null)
-      .then(data => setUser(data));
+      .then(data => {
+        setUser(data);
+        if (data && data._id) {
+          localStorage.setItem('userId', data._id);
+        }
+      });
   };
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('userId');
     setUser(null);
   };
 

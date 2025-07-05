@@ -4,7 +4,22 @@ import FloatingChat from './FloatingChat';
 import MosaicCanvas from './MosaicCanvas';
 import { FaCrown, FaUser, FaUserFriends, FaCopy, FaDownload, FaShare, FaUsers, FaComments } from 'react-icons/fa';
 
-const socket = io('/', { transports: ['websocket'] });
+// Create socket with authentication
+const createSocket = () => {
+  const token = localStorage.getItem('token');
+  const userId = localStorage.getItem('userId');
+  
+  // Connect to backend server (default port 5000)
+  const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+  
+  return io(backendUrl, { 
+    transports: ['websocket'],
+    auth: {
+      token,
+      userId
+    }
+  });
+};
 
 const ROLE_LABELS = { host: 'Host', builder: 'Builder', observer: 'Observer' };
 const ROLE_ICONS = { 
@@ -211,52 +226,55 @@ function MosaicSessionLobby({ sessionId, userId, onLeave }) {
     if (!sessionId || !userId) return;
 
     // Join mosaic session
+    const socket = createSocket();
     socket.emit('mosaic:join', { sessionId, userId });
 
     // Listen for user join/leave events
     socket.on('mosaic:user-joined', ({ userId: joinedId }) => {
-      setToast(`User ${joinedId} joined the session!`);
-      fetchSessionData();
+      if (joinedId !== userId) {
+        setToast(`User ${joinedId} joined the session!`);
+        fetchSessionData();
+      }
     });
 
     socket.on('mosaic:user-left', ({ userId: leftId }) => {
-      setToast(`User ${leftId} left the session.`);
-      fetchSessionData();
+      if (leftId !== userId) {
+        setToast(`User ${leftId} left the session.`);
+        fetchSessionData();
+      }
     });
 
     // Listen for tile placement/removal
     socket.on('mosaic:tile-placed', (data) => {
-      setTiles(prev => {
-        const existingIndex = prev.findIndex(t => t.x === data.tile.x && t.y === data.tile.y);
-        if (existingIndex >= 0) {
-          const newTiles = [...prev];
-          newTiles[existingIndex] = data.tile;
-          return newTiles;
-        } else {
-          return [...prev, data.tile];
-        }
-      });
+      console.log('Tile placed event received in lobby:', data);
+      if (data.tile) {
+        setTiles(prev => {
+          const existingIndex = prev.findIndex(t => t.x === data.tile.x && t.y === data.tile.y);
+          if (existingIndex >= 0) {
+            const newTiles = [...prev];
+            newTiles[existingIndex] = data.tile;
+            return newTiles;
+          } else {
+            return [...prev, data.tile];
+          }
+        });
+      }
       
       // Update session stats
-      if (session) {
-        setSession(prev => ({
-          ...prev,
-          completedTiles: data.completedTiles,
-          accuracy: data.accuracy
-        }));
+      if (data.completedTiles !== undefined) {
+        setSession(prev => prev ? { ...prev, completedTiles: data.completedTiles, accuracy: data.accuracy } : null);
       }
     });
 
     socket.on('mosaic:tile-removed', (data) => {
-      setTiles(prev => prev.filter(t => !(t.x === data.x && t.y === data.y)));
+      console.log('Tile removed event received in lobby:', data);
+      if (data.x !== undefined && data.y !== undefined) {
+        setTiles(prev => prev.filter(t => !(t.x === data.x && t.y === data.y)));
+      }
       
       // Update session stats
-      if (session) {
-        setSession(prev => ({
-          ...prev,
-          completedTiles: data.completedTiles,
-          accuracy: data.accuracy
-        }));
+      if (data.completedTiles !== undefined) {
+        setSession(prev => prev ? { ...prev, completedTiles: data.completedTiles, accuracy: data.accuracy } : null);
       }
     });
 
@@ -266,13 +284,9 @@ function MosaicSessionLobby({ sessionId, userId, onLeave }) {
     });
 
     return () => {
-      socket.off('mosaic:user-joined');
-      socket.off('mosaic:user-left');
-      socket.off('mosaic:tile-placed');
-      socket.off('mosaic:tile-removed');
-      socket.off('mosaic:chat-message');
+      socket.disconnect();
     };
-  }, [sessionId, userId, session]);
+  }, [sessionId, userId]);
 
   const fetchSessionData = async () => {
     try {
@@ -305,6 +319,8 @@ function MosaicSessionLobby({ sessionId, userId, onLeave }) {
 
   // Chat send handler
   const handleSendChat = (msg) => {
+    const socket = createSocket();
+    socket.emit('mosaic:join', { sessionId, userId });
     socket.emit('mosaic:chat', { sessionId, message: msg });
   };
 
@@ -370,7 +386,6 @@ function MosaicSessionLobby({ sessionId, userId, onLeave }) {
         <MosaicCanvas
           sessionId={sessionId}
           userId={userId}
-          socket={socket}
           gridWidth={session.gridWidth}
           gridHeight={session.gridHeight}
           tileSize={session.tileSize}
@@ -383,6 +398,16 @@ function MosaicSessionLobby({ sessionId, userId, onLeave }) {
           isObserver={isObserver}
           setBanner={setToast}
         />
+        {console.log('MosaicCanvas props:', {
+          sessionId,
+          userId,
+          gridWidth: session.gridWidth,
+          gridHeight: session.gridHeight,
+          tileSize: session.tileSize,
+          tilesCount: tiles.length,
+          selectedColor,
+          isObserver
+        })}
       </div>
 
       {/* Right Panel: Session Info + Color Palette + Participants (no chat) */}

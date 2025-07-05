@@ -1,10 +1,27 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import * as THREE from 'three';
+import { io } from 'socket.io-client';
+
+// Create socket with authentication
+const createSocket = () => {
+  const token = localStorage.getItem('token');
+  const userId = localStorage.getItem('userId');
+  
+  // Connect to backend server (default port 5000)
+  const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+  
+  return io(backendUrl, { 
+    transports: ['websocket'],
+    auth: {
+      token,
+      userId
+    }
+  });
+};
 
 function MosaicCanvas({ 
   sessionId, 
   userId, 
-  socket, 
   gridWidth = 32, 
   gridHeight = 32, 
   tileSize = 20,
@@ -27,6 +44,58 @@ function MosaicCanvas({
   const [referenceImageMesh, setReferenceImageMesh] = useState(null);
   const [lastPlaced, setLastPlaced] = useState(null);
   const [selectedCell, setSelectedCell] = useState(null);
+  const [socket, setSocket] = useState(null);
+  const [socketConnected, setSocketConnected] = useState(false);
+
+  // Initialize socket connection
+  useEffect(() => {
+    console.log('Initializing socket connection for session:', sessionId, 'user:', userId);
+    const newSocket = createSocket();
+    setSocket(newSocket);
+
+    // Check socket connection
+    newSocket.on('connect', () => {
+      console.log('Socket connected successfully');
+      setSocketConnected(true);
+    });
+
+    newSocket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error);
+      setSocketConnected(false);
+    });
+
+    newSocket.on('disconnect', () => {
+      console.log('Socket disconnected');
+      setSocketConnected(false);
+    });
+
+    // Join the mosaic session room
+    newSocket.emit('mosaic:join', { sessionId, userId });
+    console.log('Emitted mosaic:join event');
+
+    // Listen for tile placement events
+    newSocket.on('mosaic:tile-placed', (data) => {
+      console.log('Tile placed event received in canvas:', data);
+      if (data.tile && onTilePlaced) {
+        console.log('Calling onTilePlaced with:', data.tile.x, data.tile.y, data.tile.color);
+        onTilePlaced(data.tile.x, data.tile.y, data.tile.color);
+      }
+    });
+
+    // Listen for tile removal events
+    newSocket.on('mosaic:tile-removed', (data) => {
+      console.log('Tile removed event received in canvas:', data);
+      if (data.x !== undefined && data.y !== undefined && onTileRemoved) {
+        console.log('Calling onTileRemoved with:', data.x, data.y);
+        onTileRemoved(data.x, data.y);
+      }
+    });
+
+    return () => {
+      console.log('Disconnecting socket');
+      newSocket.disconnect();
+    };
+  }, [sessionId, userId, onTilePlaced, onTileRemoved]);
 
   // Initialize Three.js scene
   useEffect(() => {
@@ -92,6 +161,15 @@ function MosaicCanvas({
 
     newScene.add(gridGroup);
 
+    // Add a test tile to verify rendering works
+    const testGeometry = new THREE.PlaneGeometry(tileSize - 1, tileSize - 1);
+    const testMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    const testMesh = new THREE.Mesh(testGeometry, testMaterial);
+    testMesh.position.set(0, 0, 1);
+    testMesh.name = 'testTile';
+    newScene.add(testMesh);
+    console.log('Added test tile to scene');
+
     // Reference image background
     if (referenceImage) {
       const textureLoader = new THREE.TextureLoader();
@@ -124,6 +202,15 @@ function MosaicCanvas({
     setScene(newScene);
     setCamera(newCamera);
     setRenderer(newRenderer);
+
+    console.log('Three.js scene initialized:', { 
+      scene: !!newScene, 
+      camera: !!newCamera, 
+      renderer: !!newRenderer,
+      gridWidth,
+      gridHeight,
+      tileSize
+    });
 
     // Animation loop
     const animate = () => {
@@ -175,6 +262,8 @@ function MosaicCanvas({
   useEffect(() => {
     if (!scene) return;
 
+    console.log('Updating tiles in scene. Current tiles:', tiles);
+
     // Remove old tiles
     tileMeshes.forEach((mesh) => {
       scene.remove(mesh);
@@ -184,6 +273,7 @@ function MosaicCanvas({
     // Add new tiles
     const newTileMeshes = new Map();
     tiles.forEach((tile) => {
+      console.log('Creating tile mesh for:', tile);
       const geometry = new THREE.PlaneGeometry(tileSize - 1, tileSize - 1);
       const material = new THREE.MeshBasicMaterial({ color: tile.color });
       const mesh = new THREE.Mesh(geometry, material);
@@ -202,12 +292,18 @@ function MosaicCanvas({
 
   // Mouse interaction handlers
   const getGridPosition = useCallback((event) => {
-    if (!mountRef.current || !camera) return null;
+    if (!mountRef.current || !camera) {
+      console.log('getGridPosition: mountRef or camera not available');
+      return null;
+    }
 
     const rect = mountRef.current.getBoundingClientRect();
     const mouse = new THREE.Vector2();
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+    console.log('Mouse coordinates:', { clientX: event.clientX, clientY: event.clientY, rect: rect });
+    console.log('Normalized mouse coordinates:', { x: mouse.x, y: mouse.y });
 
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(mouse, camera);
@@ -217,14 +313,19 @@ function MosaicCanvas({
     const intersectionPoint = new THREE.Vector3();
     raycaster.ray.intersectPlane(plane, intersectionPoint);
 
+    console.log('Intersection point:', intersectionPoint);
+
     // Convert to grid coordinates
     const gridX = Math.floor((intersectionPoint.x + (gridWidth * tileSize) / 2) / tileSize);
     const gridY = Math.floor((-(intersectionPoint.y - (gridHeight * tileSize) / 2)) / tileSize);
+
+    console.log('Grid coordinates:', { gridX, gridY, gridWidth, gridHeight });
 
     if (gridX >= 0 && gridX < gridWidth && gridY >= 0 && gridY < gridHeight) {
       return { x: gridX, y: gridY };
     }
 
+    console.log('Grid coordinates out of bounds');
     return null;
   }, [camera, gridWidth, gridHeight, tileSize]);
 
@@ -234,6 +335,9 @@ function MosaicCanvas({
   }, [getGridPosition]);
 
   const handleMouseDown = useCallback((event) => {
+    console.log('Mouse down event triggered');
+    console.log('Current state:', { isObserver, selectedColor, socket: !!socket, sessionId, userId });
+    
     if (isObserver) {
       if (setBanner) setBanner('You are in observer mode and cannot place tiles.');
       return;
@@ -242,53 +346,70 @@ function MosaicCanvas({
       if (setBanner) setBanner('Please select a color before placing a tile.');
       return;
     }
-    const gridPos = getGridPosition(event);
-    if (!gridPos) return;
+    
+    // Try Three.js raycasting first
+    let gridPos = getGridPosition(event);
+    console.log('Three.js grid position:', gridPos);
+    
+    // Fallback: simple coordinate calculation if Three.js fails
+    if (!gridPos && mountRef.current) {
+      const rect = mountRef.current.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      
+      // Simple grid calculation
+      const cellWidth = rect.width / gridWidth;
+      const cellHeight = rect.height / gridHeight;
+      
+      const gridX = Math.floor(x / cellWidth);
+      const gridY = Math.floor(y / cellHeight);
+      
+      if (gridX >= 0 && gridX < gridWidth && gridY >= 0 && gridY < gridHeight) {
+        gridPos = { x: gridX, y: gridY };
+        console.log('Fallback grid position:', gridPos);
+      }
+    }
+    
+    if (!gridPos) {
+      console.log('No valid grid position found');
+      return;
+    }
+    
     setSelectedCell(gridPos);
     setIsDragging(true);
     const existingTile = tiles.find(tile => tile.x === gridPos.x && tile.y === gridPos.y);
+    console.log('Existing tile:', existingTile);
     if (existingTile) {
-      if (socket) socket.emit('mosaic:remove-tile', { sessionId, x: gridPos.x, y: gridPos.y });
-      if (onTileRemoved) onTileRemoved(gridPos.x, gridPos.y);
+      if (socket && socket.connected) {
+        console.log('Removing tile at:', gridPos);
+        socket.emit('mosaic:remove-tile', { sessionId, x: gridPos.x, y: gridPos.y });
+      } else {
+        console.log('Socket not available for tile removal, using local fallback');
+        // Local fallback - remove tile locally for immediate visual feedback
+        if (onTileRemoved) {
+          onTileRemoved(gridPos.x, gridPos.y);
+        }
+      }
     } else {
-      if (socket) socket.emit('mosaic:place-tile', { sessionId, x: gridPos.x, y: gridPos.y, color: selectedColor });
-      if (onTilePlaced) onTilePlaced(gridPos.x, gridPos.y, selectedColor);
+      if (socket && socket.connected) {
+        console.log('Placing tile at:', gridPos, 'with color:', selectedColor);
+        socket.emit('mosaic:place-tile', { sessionId, x: gridPos.x, y: gridPos.y, color: selectedColor });
+      } else {
+        console.log('Socket not available for tile placement, using local fallback');
+        // Local fallback - add tile locally for immediate visual feedback
+        const newTile = { x: gridPos.x, y: gridPos.y, color: selectedColor, placedBy: userId, placedAt: new Date() };
+        if (onTilePlaced) {
+          onTilePlaced(gridPos.x, gridPos.y, selectedColor);
+        }
+      }
       setLastPlaced({ x: gridPos.x, y: gridPos.y, time: Date.now() });
       setTimeout(() => setSelectedCell(null), 500);
     }
-  }, [isObserver, getGridPosition, tiles, socket, sessionId, selectedColor, onTilePlaced, onTileRemoved, setBanner]);
+  }, [isObserver, getGridPosition, tiles, socket, sessionId, selectedColor, setBanner, userId, gridWidth, gridHeight]);
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
   }, []);
-
-  const handleClick = useCallback((event) => {
-    if (isObserver || isDragging) return;
-    
-    const gridPos = getGridPosition(event);
-    if (!gridPos) return;
-
-    // Check if tile exists at this position
-    const existingTile = tiles.find(tile => tile.x === gridPos.x && tile.y === gridPos.y);
-    
-    if (existingTile) {
-      // Remove tile
-      if (socket) {
-        socket.emit('mosaic:remove-tile', { sessionId, x: gridPos.x, y: gridPos.y });
-      }
-      if (onTileRemoved) {
-        onTileRemoved(gridPos.x, gridPos.y);
-      }
-    } else {
-      // Place tile
-      if (socket) {
-        socket.emit('mosaic:place-tile', { sessionId, x: gridPos.x, y: gridPos.y, color: selectedColor });
-      }
-      if (onTilePlaced) {
-        onTilePlaced(gridPos.x, gridPos.y, selectedColor);
-      }
-    }
-  }, [isObserver, isDragging, getGridPosition, tiles, socket, sessionId, selectedColor, onTilePlaced, onTileRemoved]);
 
   // Add event listeners
   useEffect(() => {
@@ -298,15 +419,13 @@ function MosaicCanvas({
     element.addEventListener('mousemove', handleMouseMove);
     element.addEventListener('mousedown', handleMouseDown);
     element.addEventListener('mouseup', handleMouseUp);
-    element.addEventListener('click', handleClick);
 
     return () => {
       element.removeEventListener('mousemove', handleMouseMove);
       element.removeEventListener('mousedown', handleMouseDown);
       element.removeEventListener('mouseup', handleMouseUp);
-      element.removeEventListener('click', handleClick);
     };
-  }, [handleMouseMove, handleMouseDown, handleMouseUp, handleClick]);
+  }, [handleMouseMove, handleMouseDown, handleMouseUp]);
 
   // Hover effect
   useEffect(() => {
@@ -403,11 +522,31 @@ function MosaicCanvas({
         zIndex: 10
       }}>
         Grid: {gridWidth}×{gridHeight} | Tiles: {tiles.length}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+          <span>Selected:</span>
+          <div style={{
+            width: 20,
+            height: 20,
+            background: selectedColor,
+            border: '1px solid white',
+            borderRadius: 3
+          }} />
+        </div>
         {hoveredTile && (
           <span style={{ marginLeft: 10 }}>
             | Hover: ({hoveredTile.x}, {hoveredTile.y})
           </span>
         )}
+        {selectedCell && (
+          <div style={{ marginTop: 4, color: '#1e90ff' }}>
+            Selected: ({selectedCell.x}, {selectedCell.y})
+          </div>
+        )}
+        <div style={{ marginTop: 4, fontSize: 12 }}>
+          Connection: <span style={{ color: socketConnected ? '#4CAF50' : '#f44336' }}>
+            {socketConnected ? 'Connected' : 'Disconnected'}
+          </span>
+        </div>
       </div>
     </div>
   );
