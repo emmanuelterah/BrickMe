@@ -8,6 +8,7 @@ function SidebarNav({ selected, onSelect }) {
       <button className={selected === 'mosaic' ? 'active' : ''} onClick={() => onSelect('mosaic')}>🟫 Mosaic Builder</button>
       <button className={selected === 'voice-ai' ? 'active' : ''} onClick={() => onSelect('voice-ai')}>🎤 Voice AI Chat</button>
       <button className={selected === 'settings' ? 'active' : ''} onClick={() => onSelect('settings')}>⚙️ Settings</button>
+      <button className={selected === 'session' ? 'active' : ''} onClick={() => onSelect('session')}>🎨 Collaborative Mosaic</button>
       <button className="disabled" disabled>🧱 3D Instructions (soon)</button>
       <button className="disabled" disabled>🧑‍🎨 Minifig Builder (soon)</button>
     </nav>

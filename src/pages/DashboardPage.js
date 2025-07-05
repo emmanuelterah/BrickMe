@@ -10,6 +10,8 @@ import LegoFySection from '../components/dashboard/LegoFySection';
 import MosaicSection from '../components/dashboard/MosaicSection';
 import SettingsSection from '../components/dashboard/SettingsSection';
 import VoiceAiChat from '../components/dashboard/voice/VoiceAiChat';
+import MosaicSessionLobby from '../components/dashboard/MosaicSessionLobby';
+import MosaicSessionCreator from '../components/dashboard/MosaicSessionCreator';
 
 function DashboardPage() {
   const { user, setUser, logout } = useContext(AuthContext);
@@ -58,6 +60,12 @@ function DashboardPage() {
   const [mosaicUploadedImage, setMosaicUploadedImage] = useState(null);
   const [mosaicUploadedFileName, setMosaicUploadedFileName] = useState('');
   const [mosaicLoading, setMosaicLoading] = useState(false);
+  // Add state for mosaic session
+  const [mosaicSessionId, setMosaicSessionId] = useState(null);
+  const [mosaicSessionInput, setMosaicSessionInput] = useState('');
+  const [mosaicSessionStatus, setMosaicSessionStatus] = useState('');
+  const [showMosaicCreator, setShowMosaicCreator] = useState(false);
+  const [myMosaicSessions, setMyMosaicSessions] = useState([]);
 
   // Close dropdown on outside click, but not when clicking the user slot or inside dropdown
   useEffect(() => {
@@ -494,6 +502,55 @@ function DashboardPage() {
     }
   };
 
+  // Create a new mosaic session
+  const handleCreateMosaicSession = (sessionId) => {
+    setMosaicSessionId(sessionId);
+    setShowMosaicCreator(false);
+    setSelectedSection('mosaic-session');
+  };
+
+  // Join an existing mosaic session
+  const handleJoinMosaicSession = async () => {
+    setMosaicSessionStatus('Joining...');
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`/api/mosaic/${mosaicSessionInput}/join`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok && data._id) {
+        setMosaicSessionId(data._id);
+        setMosaicSessionStatus('Joined mosaic session!');
+        setSelectedSection('mosaic-session');
+      } else {
+        setMosaicSessionStatus(data.message || 'Failed to join mosaic session');
+      }
+    } catch (err) {
+      setMosaicSessionStatus('Failed to join mosaic session');
+    }
+  };
+
+  // Fetch user's mosaic sessions
+  useEffect(() => {
+    const fetchMySessions = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      try {
+        const res = await fetch('/api/mosaic/mine', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setMyMosaicSessions(data);
+        }
+      } catch (err) {
+        // ignore
+      }
+    };
+    fetchMySessions();
+  }, [mosaicSessionId, showMosaicCreator]);
+
   return (
     <div className={`dashboard-layout theme-${theme}`}>
       <Sidebar
@@ -553,6 +610,95 @@ function DashboardPage() {
             handleDownloadPDF={handleDownloadPDF}
             setShowMosaic={setShowMosaic}
             mosaicLoading={mosaicLoading}
+          />
+        )}
+        {selectedSection === 'session' && (
+          <div>
+            <h2 style={{ marginBottom: 24, color: '#222' }}>Collaborative Mosaic Sessions</h2>
+            {/* My Sessions List */}
+            {myMosaicSessions.length > 0 && (
+              <div style={{ marginBottom: 32 }}>
+                <h3 style={{ marginBottom: 12, color: '#222' }}>My Sessions</h3>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+                  {myMosaicSessions.map(session => (
+                    <div key={session._id} style={{
+                      background: '#fffbe7',
+                      border: '2px solid #ffe066',
+                      borderRadius: 10,
+                      padding: '14px 18px',
+                      minWidth: 220,
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 6
+                    }}
+                      onClick={() => {
+                        setMosaicSessionId(session._id);
+                        setSelectedSection('mosaic-session');
+                      }}
+                      title={`Rejoin session: ${session.referenceImageName || session._id}`}
+                    >
+                      <div style={{ fontWeight: 700, fontSize: 16 }}>{session.referenceImageName || 'Untitled'}</div>
+                      <div style={{ fontSize: 13, color: '#666' }}>Grid: {session.gridWidth}×{session.gridHeight}</div>
+                      <div style={{ fontSize: 13, color: '#666' }}>Progress: {session.completedTiles}/{session.totalTiles}</div>
+                      <div style={{ fontSize: 12, color: '#aaa' }}>Last updated: {new Date(session.updatedAt).toLocaleString()}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {!mosaicSessionId && !showMosaicCreator && (
+              <div style={{ marginBottom: 16 }}>
+                <button 
+                  onClick={() => setShowMosaicCreator(true)}
+                  style={{
+                    background: '#e0b800',
+                    color: '#222',
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '12px 24px',
+                    fontSize: 16,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    marginRight: 12,
+                  }}
+                >
+                  Create New Mosaic Session
+                </button>
+                <span style={{ margin: '0 12px' }}>or</span>
+                <input 
+                  value={mosaicSessionInput} 
+                  onChange={e => setMosaicSessionInput(e.target.value)} 
+                  placeholder="Mosaic Session ID" 
+                  style={{
+                    padding: '8px 12px',
+                    border: '1px solid #ffe066',
+                    borderRadius: 6,
+                    marginRight: 12,
+                  }}
+                />
+                <button onClick={handleJoinMosaicSession}>Join Mosaic Session</button>
+                <div style={{ color: '#e53d00', marginTop: 8 }}>{mosaicSessionStatus}</div>
+              </div>
+            )}
+            {showMosaicCreator && (
+              <MosaicSessionCreator 
+                onCreateSession={handleCreateMosaicSession}
+                onCancel={() => setShowMosaicCreator(false)}
+              />
+            )}
+          </div>
+        )}
+        
+        {selectedSection === 'mosaic-session' && mosaicSessionId && (
+          <MosaicSessionLobby 
+            sessionId={mosaicSessionId} 
+            userId={user?._id || user?.id} 
+            onLeave={() => {
+              setMosaicSessionId(null);
+              setSelectedSection('session');
+            }} 
           />
         )}
         {selectedSection === 'settings' && (

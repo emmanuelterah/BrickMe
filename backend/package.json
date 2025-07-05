@@ -20,6 +20,7 @@
     "mongoose": "^8.16.1",
     "multer": "^2.0.1",
     "nodemailer": "^7.0.4",
-    "openai": "^5.8.2"
+    "openai": "^5.8.2",
+    "socket.io": "^4.8.1"
   }
 }
