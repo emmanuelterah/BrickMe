@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import AiAvatar from './VoiceAiAvatar';
-import API_BASE from '../../api';
+import API_BASE from '../../../api';
 
 const VOICE_OPTIONS = [
   { label: 'The Rock (Male)', gender: 'male', keyword: 'rock', fallback: 'en-US' },
