@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
+import API_BASE from '../api';
 
 function ConfirmPage() {
   const [message, setMessage] = useState('Confirming...');
   useEffect(() => {
     const token = window.location.pathname.split('/').pop();
-    fetch(`/api/auth/confirm/${token}`)
+    fetch(`${API_BASE}/api/auth/confirm/${token}`)
       .then(res => res.json())
       .then(data => setMessage(data.message))
       .catch(() => setMessage('Confirmation failed'));

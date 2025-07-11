@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import AiAvatar from './VoiceAiAvatar';
+import API_BASE from '../../../api';
 
 const VOICE_OPTIONS = [
   { label: 'The Rock (Male)', gender: 'male', keyword: 'rock', fallback: 'en-US' },
@@ -139,7 +140,7 @@ const VoiceAiChat = ({ legoAvatar, user }) => {
     setAiLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('/api/ai/chat', {
+      const res = await fetch(`${API_BASE}/api/ai/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

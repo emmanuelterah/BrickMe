@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { FaUpload, FaImage, FaCog, FaPlay } from 'react-icons/fa';
+import API_BASE from '../../api';
 
 function MosaicSessionCreator({ onCreateSession, onCancel }) {
   const [referenceImage, setReferenceImage] = useState(null);
@@ -61,7 +62,7 @@ function MosaicSessionCreator({ onCreateSession, onCancel }) {
       formData.append('tileSize', tileSize);
       formData.append('sessionName', sessionName);
 
-      const response = await fetch('/api/mosaic', {
+      const response = await fetch(`${API_BASE}/api/mosaic`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,

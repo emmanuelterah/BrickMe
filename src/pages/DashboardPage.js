@@ -12,6 +12,7 @@ import SettingsSection from '../components/dashboard/SettingsSection';
 import VoiceAiChat from '../components/dashboard/voice/VoiceAiChat';
 import MosaicSessionLobby from '../components/dashboard/MosaicSessionLobby';
 import MosaicSessionCreator from '../components/dashboard/MosaicSessionCreator';
+import API_BASE from '../api';
 
 function DashboardPage() {
   const { user, setUser, logout } = useContext(AuthContext);
@@ -91,7 +92,7 @@ function DashboardPage() {
     setMessage('');
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch('/api/user/profile', {
+      const res = await fetch(`${API_BASE}/api/user/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -117,7 +118,7 @@ function DashboardPage() {
     setThemeMsg('');
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch('/api/user/theme', {
+      const res = await fetch(`${API_BASE}/api/user/theme`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -192,7 +193,7 @@ function DashboardPage() {
     formData.append('size', legoSize);
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch('/api/lego-fy', {
+      const res = await fetch(`${API_BASE}/api/lego-fy`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
@@ -460,7 +461,7 @@ function DashboardPage() {
     formData.append('avatar', blob, 'avatar.jpg');
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch('/api/user/avatar', {
+      const res = await fetch(`${API_BASE}/api/user/avatar`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
@@ -514,7 +515,7 @@ function DashboardPage() {
     setMosaicSessionStatus('Joining...');
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`/api/mosaic/${mosaicSessionInput}/join`, {
+      const res = await fetch(`${API_BASE}/api/mosaic/${mosaicSessionInput}/join`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -537,7 +538,7 @@ function DashboardPage() {
       const token = localStorage.getItem('token');
       if (!token) return;
       try {
-        const res = await fetch('/api/mosaic/mine', {
+        const res = await fetch(`${API_BASE}/api/mosaic/mine`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok) {

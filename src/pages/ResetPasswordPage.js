@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import API_BASE from '../api';
 
 function ResetPasswordPage() {
   const [newPassword, setNewPassword] = useState('');
@@ -8,7 +9,7 @@ function ResetPasswordPage() {
     e.preventDefault();
     setMessage('');
     try {
-      const res = await fetch('/api/auth/reset-password', {
+      const res = await fetch(`${API_BASE}/api/auth/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, newPassword }),

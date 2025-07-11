@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import API_BASE from '../api';
 
 function RequestResetPage() {
   const [email, setEmail] = useState('');
@@ -7,7 +8,7 @@ function RequestResetPage() {
     e.preventDefault();
     setMessage('');
     try {
-      const res = await fetch('/api/auth/request-reset', {
+      const res = await fetch(`${API_BASE}/api/auth/request-reset`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),

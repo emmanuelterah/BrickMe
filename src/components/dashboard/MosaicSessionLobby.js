@@ -3,6 +3,7 @@ import { io } from 'socket.io-client';
 import FloatingChat from './FloatingChat';
 import MosaicCanvas from './MosaicCanvas';
 import { FaCrown, FaUser, FaUserFriends, FaCopy, FaDownload, FaShare, FaUsers, FaComments, FaCircle, FaInfoCircle } from 'react-icons/fa';
+import API_BASE from '../../../api';
 
 // Create socket with authentication
 const createSocket = () => {
@@ -308,7 +309,7 @@ function MosaicSessionLobby({ sessionId, userId, onLeave }) {
   // Robust session fetcher
   const fetchSession = async (isMounted = true) => {
     try {
-      const response = await fetch(`/api/mosaic/${sessionId}`, {
+      const response = await fetch(`${API_BASE}/api/mosaic/${sessionId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       if (response.ok) {
@@ -426,7 +427,7 @@ function MosaicSessionLobby({ sessionId, userId, onLeave }) {
 
   const fetchSessionData = async () => {
     try {
-      const response = await fetch(`/api/mosaic/${sessionId}`, {
+      const response = await fetch(`${API_BASE}/api/mosaic/${sessionId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       
@@ -476,7 +477,7 @@ function MosaicSessionLobby({ sessionId, userId, onLeave }) {
 
     // Persist to backend and update with backend data
     try {
-      const response = await fetch(`/api/mosaic/${sessionId}/tiles`, {
+      const response = await fetch(`${API_BASE}/api/mosaic/${sessionId}/tiles`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
