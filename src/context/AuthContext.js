@@ -1,44 +1,37 @@
 import React, { createContext, useState, useEffect } from 'react';
+import useApi from '../hooks/useApi';
 
 export const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { get } = useApi();
 
   // Check for token and fetch user profile on mount
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      fetch('/api/user/profile', {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-        .then(res => res.ok ? res.json() : null)
-        .then(data => {
-          setUser(data || null);
-          if (data && data._id && !localStorage.getItem('userId')) {
-            localStorage.setItem('userId', data._id);
-          }
-          setLoading(false);
-        })
-        .catch(() => setLoading(false));
+      get('/api/user/profile').then(({ data }) => {
+        setUser(data || null);
+        if (data && data._id && !localStorage.getItem('userId')) {
+          localStorage.setItem('userId', data._id);
+        }
+        setLoading(false);
+      }).catch(() => setLoading(false));
     } else {
       setLoading(false);
     }
-  }, []);
+  }, [get]);
 
   const login = (token) => {
     localStorage.setItem('token', token);
-    fetch('/api/user/profile', {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        setUser(data);
-        if (data && data._id) {
-          localStorage.setItem('userId', data._id);
-        }
-      });
+    get('/api/user/profile').then(({ data }) => {
+      setUser(data);
+      if (data && data._id) {
+        localStorage.setItem('userId', data._id);
+      }
+    });
   };
 
   const logout = () => {

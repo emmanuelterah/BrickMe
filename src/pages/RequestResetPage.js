@@ -1,22 +1,15 @@
 import React, { useState } from 'react';
+import useApi from '../hooks/useApi';
 
 function RequestResetPage() {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
+  const { post } = useApi();
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage('');
-    try {
-      const res = await fetch('/api/auth/request-reset', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-      const data = await res.json();
-      setMessage(data.message);
-    } catch (err) {
-      setMessage('Request failed');
-    }
+    const { data } = await post('/api/auth/request-reset', { email });
+    setMessage(data?.message);
   };
   return (
     <div className="auth-page">

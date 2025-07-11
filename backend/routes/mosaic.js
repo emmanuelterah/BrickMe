@@ -160,6 +160,13 @@ router.post('/:id/join', auth, async (req, res) => {
     } else {
       participant.isOnline = true;
       participant.lastActive = new Date();
+      // PATCH: If user is observer but there is no builder, promote to builder
+      if (participant.role === 'observer') {
+        const hasBuilder = session.participants.some(p => p.role === 'builder');
+        if (!hasBuilder || session.hostUserId.toString() === userId) {
+          participant.role = session.hostUserId.toString() === userId ? 'host' : 'builder';
+        }
+      }
     }
     
     await session.save();
@@ -210,7 +217,7 @@ router.post('/:id/tiles', auth, async (req, res) => {
     
     // Update completion stats
     session.completedTiles = session.tiles.length;
-    session.accuracy = calculateAccuracy(session);
+    session.accuracy = await calculateAccuracy(session);
     
     await session.save();
     
@@ -249,7 +256,7 @@ router.delete('/:id/tiles/:x/:y', auth, async (req, res) => {
     
     session.tiles.splice(tileIndex, 1);
     session.completedTiles = session.tiles.length;
-    session.accuracy = calculateAccuracy(session);
+    session.accuracy = await calculateAccuracy(session);
     
     await session.save();
     
@@ -340,10 +347,131 @@ async function generateColorPalette(imagePath) {
 }
 
 // Helper function to calculate accuracy
-function calculateAccuracy(session) {
-  // For now, return a simple percentage based on completed tiles
-  // In a real implementation, you would compare with the reference image
-  return Math.round((session.completedTiles / session.totalTiles) * 100);
+async function calculateAccuracy(session) {
+  try {
+    // If no reference image, return completion percentage
+    if (!session.referenceImage) {
+      return Math.round((session.completedTiles / session.totalTiles) * 100);
+    }
+
+    // Get the reference image path
+    const imagePath = path.join(__dirname, '..', session.referenceImage.replace('/uploads/', ''));
+    
+    // Check if image exists
+    if (!fs.existsSync(imagePath)) {
+      console.log('Reference image not found, using completion percentage');
+      return Math.round((session.completedTiles / session.totalTiles) * 100);
+    }
+
+    // Analyze the reference image to get target colors for each grid position
+    const targetColors = await analyzeReferenceImage(imagePath, session.gridWidth, session.gridHeight);
+    
+    // Compare placed tiles with target colors
+    let correctTiles = 0;
+    let totalPlacedTiles = session.tiles.length;
+    
+    session.tiles.forEach(tile => {
+      const targetColor = targetColors[tile.y]?.[tile.x];
+      if (targetColor && isColorMatch(tile.color, targetColor)) {
+        correctTiles++;
+      }
+    });
+    
+    // Calculate accuracy: (correct tiles / total placed tiles) * 100
+    // If no tiles placed, return 0
+    if (totalPlacedTiles === 0) {
+      return 0;
+    }
+    
+    const accuracy = Math.round((correctTiles / totalPlacedTiles) * 100);
+    console.log(`Accuracy calculation: ${correctTiles}/${totalPlacedTiles} correct tiles = ${accuracy}%`);
+    
+    return accuracy;
+  } catch (error) {
+    console.error('Error calculating accuracy:', error);
+    // Fallback to completion percentage
+    return Math.round((session.completedTiles / session.totalTiles) * 100);
+  }
+}
+
+// Helper function to analyze reference image and get target colors
+async function analyzeReferenceImage(imagePath, gridWidth, gridHeight) {
+  // This is a simplified implementation
+  // In a real implementation, you would use an image processing library like Sharp or Jimp
+  
+  // For now, we'll create a mock target color grid
+  // This simulates what the reference image analysis would produce
+  const targetColors = [];
+  
+  for (let y = 0; y < gridHeight; y++) {
+    targetColors[y] = [];
+    for (let x = 0; x < gridWidth; x++) {
+      // Create a pattern based on position (this is just for demonstration)
+      // In reality, this would be the actual color from the reference image
+      const hue = (x + y * gridWidth) % 360;
+      const saturation = 70 + (x % 30);
+      const lightness = 50 + (y % 20);
+      
+      // Convert HSL to hex (simplified)
+      const color = hslToHex(hue, saturation, lightness);
+      targetColors[y][x] = color;
+    }
+  }
+  
+  return targetColors;
+}
+
+// Helper function to check if two colors match (with tolerance)
+function isColorMatch(color1, color2, tolerance = 30) {
+  // Convert hex colors to RGB
+  const rgb1 = hexToRgb(color1);
+  const rgb2 = hexToRgb(color2);
+  
+  if (!rgb1 || !rgb2) return false;
+  
+  // Calculate color distance using Euclidean distance
+  const distance = Math.sqrt(
+    Math.pow(rgb1.r - rgb2.r, 2) +
+    Math.pow(rgb1.g - rgb2.g, 2) +
+    Math.pow(rgb1.b - rgb2.b, 2)
+  );
+  
+  // Return true if distance is within tolerance
+  return distance <= tolerance;
+}
+
+// Helper function to convert hex to RGB
+function hexToRgb(hex) {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : null;
+}
+
+// Helper function to convert HSL to hex (simplified)
+function hslToHex(h, s, l) {
+  // This is a simplified HSL to hex conversion
+  // In a real implementation, you'd use a proper color conversion library
+  
+  // For demonstration, we'll use a simple mapping
+  const colors = [
+    '#ffd700', // Yellow
+    '#ff0000', // Red
+    '#00aaff', // Blue
+    '#00ff00', // Green
+    '#ffffff', // White
+    '#000000', // Black
+    '#ff6b35', // Orange
+    '#8a2be2', // Purple
+    '#ff69b4', // Pink
+    '#a0522d', // Brown
+  ];
+  
+  // Use position to select a color
+  const index = Math.floor((h + s + l) / 50) % colors.length;
+  return colors[index];
 }
 
 module.exports = router; 

@@ -2,7 +2,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import { io } from 'socket.io-client';
 import FloatingChat from './FloatingChat';
 import MosaicCanvas from './MosaicCanvas';
-import { FaCrown, FaUser, FaUserFriends, FaCopy, FaDownload, FaShare, FaUsers, FaComments } from 'react-icons/fa';
+import { FaCrown, FaUser, FaUserFriends, FaCopy, FaDownload, FaShare, FaUsers, FaComments, FaCircle, FaInfoCircle } from 'react-icons/fa';
+import useApi from '../../../hooks/useApi';
 
 // Create socket with authentication
 const createSocket = () => {
@@ -55,8 +56,25 @@ function ColorPalette({ colors = [], selectedColor, onColorSelect }) {
   );
 }
 
-function SessionInfo({ session, participants, onCopyLink, copied }) {
+function SessionInfo({ session, participants, onCopyLink, copied, tiles = [] }) {
   const myParticipant = participants.find(p => p.userId === session?.hostUserId);
+  const [recentActivity, setRecentActivity] = useState(false);
+  
+  // Calculate dynamic progress based on current tiles
+  const completedTiles = tiles.length;
+  const totalTiles = session ? session.gridWidth * session.gridHeight : 0;
+  const progressPercentage = totalTiles > 0 ? Math.round((completedTiles / totalTiles) * 100) : 0;
+  
+  // Calculate accuracy based on the session data
+  // The backend now calculates accuracy by comparing placed tiles to the reference image
+  const accuracy = session?.accuracy || progressPercentage;
+  
+  // Show activity indicator when tiles change
+  useEffect(() => {
+    setRecentActivity(true);
+    const timer = setTimeout(() => setRecentActivity(false), 1000);
+    return () => clearTimeout(timer);
+  }, [tiles.length]);
   
   return (
     <div style={{ padding: 16, borderBottom: '1px solid #ffe066', background: '#fffbe7' }}>
@@ -89,18 +107,117 @@ function SessionInfo({ session, participants, onCopyLink, copied }) {
             Reference: {session.referenceImageName || 'Uploaded Image'}
           </div>
           <div style={{ fontSize: 14, color: '#666', marginBottom: 4 }}>
-            Grid: {session.gridWidth}×{session.gridHeight} | Progress: {session.completedTiles}/{session.totalTiles} tiles
+            Grid: {session.gridWidth}×{session.gridHeight} | Progress: {completedTiles}/{totalTiles} tiles
           </div>
-          <div style={{ fontSize: 14, color: '#666' }}>
-            Accuracy: {session.accuracy}% | Status: {session.status}
+          <div style={{ fontSize: 14, color: '#666', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span>Accuracy: {accuracy}%</span>
+            <div style={{ position: 'relative', display: 'inline-block' }}>
+              <FaInfoCircle 
+                size={12} 
+                color="#666" 
+                style={{ cursor: 'help' }}
+                title="Accuracy is calculated by comparing your placed tiles to the reference image. It shows how many tiles are in the correct color and position."
+              />
+            </div>
+            <span style={{ marginLeft: 'auto' }}>Status: {session.status}</span>
           </div>
+          
+          {/* Progress Bar */}
+          <div style={{ 
+            width: '100%', 
+            height: 8, 
+            backgroundColor: '#e0e0e0', 
+            borderRadius: 4, 
+            overflow: 'hidden',
+            marginBottom: 8,
+            position: 'relative'
+          }}>
+            <div style={{
+              width: `${progressPercentage}%`,
+              height: '100%',
+              backgroundColor: '#4CAF50',
+              transition: 'width 0.3s ease-in-out',
+              borderRadius: 4,
+              position: 'relative'
+            }} />
+            {/* Progress bar glow effect */}
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: `${progressPercentage}%`,
+              height: '100%',
+              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)',
+              animation: 'progressGlow 2s ease-in-out infinite',
+              transition: 'width 0.3s ease-in-out'
+            }} />
+          </div>
+          <style>{`
+            @keyframes progressGlow {
+              0%, 100% { opacity: 0; }
+              50% { opacity: 1; }
+            }
+          `}</style>
+          
+          {/* Progress Text */}
+          <div style={{ fontSize: 12, color: '#666', textAlign: 'center', marginBottom: 8 }}>
+            {progressPercentage}% Complete
+          </div>
+          
+          {/* Tile Counter */}
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            fontSize: 12, 
+            color: '#666',
+            padding: '8px 12px',
+            backgroundColor: '#f5f5f5',
+            borderRadius: 4,
+            marginBottom: 8
+          }}>
+            <span>Tiles Placed: {completedTiles}</span>
+            <span>Remaining: {totalTiles - completedTiles}</span>
+          </div>
+          
+          {/* Accuracy Breakdown */}
+          {completedTiles > 0 && (
+            <div style={{ 
+              fontSize: 11, 
+              color: '#666',
+              padding: '6px 8px',
+              backgroundColor: '#e8f5e8',
+              borderRadius: 4,
+              border: '1px solid #4CAF50'
+            }}>
+              <div style={{ fontWeight: 600, marginBottom: 2 }}>Accuracy Breakdown:</div>
+              <div>• {accuracy}% of placed tiles match the reference image</div>
+              <div>• Color tolerance allows for slight variations</div>
+              <div>• Higher accuracy = better mosaic quality</div>
+            </div>
+          )}
         </div>
       )}
       
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14 }}>
         <FaUsers color="#666" />
         <span style={{ color: '#666' }}>{participants.length} participants</span>
+        {recentActivity && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
+            <FaCircle 
+              size={8} 
+              color="#4CAF50" 
+              style={{ animation: 'pulse 1s ease-in-out infinite' }}
+            />
+            <span style={{ fontSize: 12, color: '#4CAF50' }}>Active</span>
+          </div>
+        )}
       </div>
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+      `}</style>
     </div>
   );
 }
@@ -188,38 +305,42 @@ function MosaicSessionLobby({ sessionId, userId, onLeave }) {
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
   const [chatOpen, setChatOpen] = useState(false);
+  const { get, post } = useApi();
 
-  // Fetch session details on mount
+  // Robust session fetcher
+  const fetchSession = async (isMounted = true) => {
+    const { ok, data } = await get(`/api/mosaic/${sessionId}`);
+    if (ok && isMounted) {
+      setSession(data);
+      setTiles(data.tiles || []);
+      setParticipants(data.participants || []);
+      setReferenceImage(data.referenceImageUrl || null);
+      setGridWidth(data.gridWidth);
+      setGridHeight(data.gridHeight);
+      setStatus(data.status);
+      setHostUserId(data.hostUserId);
+      setAccuracy(data.accuracy);
+    }
+  };
+
+  // Fetch session on mount and sessionId change
   useEffect(() => {
     if (!sessionId) return;
-    
-    const fetchSession = async () => {
-      try {
-        const response = await fetch(`/api/mosaic/${sessionId}`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          setSession(data);
-          setParticipants(data.participants || []);
-          setChat(data.chatMessages || []);
-          setTiles(data.tiles || []);
-          setSelectedColor(data.colorPalette?.[0] || '#ffd700');
-        } else {
-          console.error('Failed to fetch session');
-          onLeave();
-        }
-      } catch (error) {
-        console.error('Error fetching session:', error);
-        onLeave();
-      } finally {
-        setLoading(false);
+    let isMounted = true;
+    fetchSession(isMounted);
+    return () => { isMounted = false; };
+  }, [sessionId, onLeave]);
+
+  // Refetch session data when tab regains focus
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        fetchSession(true);
       }
     };
-
-    fetchSession();
-  }, [sessionId, onLeave]);
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [sessionId]);
 
   // Socket connection and event handling
   useEffect(() => {
@@ -289,23 +410,17 @@ function MosaicSessionLobby({ sessionId, userId, onLeave }) {
   }, [sessionId, userId]);
 
   const fetchSessionData = async () => {
-    try {
-      const response = await fetch(`/api/mosaic/${sessionId}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setParticipants(data.participants || []);
-        setTiles(data.tiles || []);
-        setSession(prev => ({
-          ...prev,
-          completedTiles: data.completedTiles,
-          accuracy: data.accuracy
-        }));
-      }
-    } catch (error) {
-      console.error('Error fetching session data:', error);
+    const { ok, data } = await get(`/api/mosaic/${sessionId}`);
+    if (ok) {
+      setSession(data);
+      setTiles(data.tiles || []);
+      setParticipants(data.participants || []);
+      setReferenceImage(data.referenceImageUrl || null);
+      setGridWidth(data.gridWidth);
+      setGridHeight(data.gridHeight);
+      setStatus(data.status);
+      setHostUserId(data.hostUserId);
+      setAccuracy(data.accuracy);
     }
   };
 
@@ -325,23 +440,14 @@ function MosaicSessionLobby({ sessionId, userId, onLeave }) {
   };
 
   // Tile placement handlers
-  const handleTilePlaced = (x, y, color) => {
-    // Optimistic update - the socket event will confirm
-    setTiles(prev => {
-      const existingIndex = prev.findIndex(t => t.x === x && t.y === y);
-      if (existingIndex >= 0) {
-        const newTiles = [...prev];
-        newTiles[existingIndex] = { x, y, color, placedBy: userId, placedAt: new Date() };
-        return newTiles;
-      } else {
-        return [...prev, { x, y, color, placedBy: userId, placedAt: new Date() }];
-      }
-    });
+  const handleTilePlaced = async (x, y, color) => {
+    await post(`/api/mosaic/${sessionId}/tiles`, { x, y, color });
+    fetchSessionData();
   };
 
-  const handleTileRemoved = (x, y) => {
-    // Optimistic update - the socket event will confirm
-    setTiles(prev => prev.filter(t => !(t.x === x && t.y === y)));
+  const handleTileRemoved = async (x, y) => {
+    await post(`/api/mosaic/${sessionId}/tiles/remove`, { x, y });
+    fetchSessionData();
   };
 
   // Check if current user is observer
@@ -377,6 +483,9 @@ function MosaicSessionLobby({ sessionId, userId, onLeave }) {
       </div>
     );
   }
+
+  // Debug: Log tiles state before rendering MosaicCanvas
+  console.log('Tiles state in Lobby:', tiles);
 
   return (
     <div style={{ display: 'flex', height: '100vh', minHeight: 0, overflow: 'hidden' }}>
@@ -416,7 +525,8 @@ function MosaicSessionLobby({ sessionId, userId, onLeave }) {
           session={session} 
           participants={participants} 
           onCopyLink={handleCopyLink} 
-          copied={copied} 
+          copied={copied}
+          tiles={tiles}
         />
         
         <ParticipantsList participants={participants} currentUserId={userId} />

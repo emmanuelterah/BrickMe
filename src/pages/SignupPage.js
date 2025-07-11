@@ -1,24 +1,17 @@
 import React, { useState } from 'react';
+import useApi from '../hooks/useApi';
 
 function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [message, setMessage] = useState('');
+  const { post } = useApi();
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage('');
-    try {
-      const res = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, profile: { name } }),
-      });
-      const data = await res.json();
-      setMessage(data.message);
-    } catch (err) {
-      setMessage('Signup failed');
-    }
+    const { data } = await post('/api/auth/signup', { email, password, profile: { name } });
+    setMessage(data?.message);
   };
   return (
     <div className="auth-page">

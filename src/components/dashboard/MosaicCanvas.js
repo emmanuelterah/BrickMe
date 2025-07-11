@@ -47,6 +47,9 @@ function MosaicCanvas({
   const [socket, setSocket] = useState(null);
   const [socketConnected, setSocketConnected] = useState(false);
 
+  // Debug: Log tiles prop received
+  console.log('Tiles prop received by MosaicCanvas:', tiles);
+
   // Initialize socket connection
   useEffect(() => {
     console.log('Initializing socket connection for session:', sessionId, 'user:', userId);
@@ -161,15 +164,6 @@ function MosaicCanvas({
 
     newScene.add(gridGroup);
 
-    // Add a test tile to verify rendering works
-    const testGeometry = new THREE.PlaneGeometry(tileSize - 1, tileSize - 1);
-    const testMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-    const testMesh = new THREE.Mesh(testGeometry, testMaterial);
-    testMesh.position.set(0, 0, 1);
-    testMesh.name = 'testTile';
-    newScene.add(testMesh);
-    console.log('Added test tile to scene');
-
     // Reference image background
     if (referenceImage) {
       const textureLoader = new THREE.TextureLoader();
@@ -262,6 +256,7 @@ function MosaicCanvas({
   useEffect(() => {
     if (!scene) return;
 
+    // Debug: Log tiles array when updating scene
     console.log('Updating tiles in scene. Current tiles:', tiles);
 
     // Remove old tiles
@@ -281,9 +276,10 @@ function MosaicCanvas({
       // Position tile in grid
       const x = tile.x * tileSize - (gridWidth * tileSize) / 2 + tileSize / 2;
       const y = -(tile.y * tileSize - (gridHeight * tileSize) / 2 + tileSize / 2);
-      mesh.position.set(x, y, 1);
+      mesh.position.set(x, y, 10); // Set z to 10 to ensure tiles are above everything
       
       scene.add(mesh);
+      console.log('Added mesh to scene:', mesh.position, mesh.material.color);
       newTileMeshes.set(`${tile.x},${tile.y}`, mesh);
     });
 

@@ -1,23 +1,16 @@
 import React, { useState } from 'react';
+import useApi from '../hooks/useApi';
 
 function ResetPasswordPage() {
   const [newPassword, setNewPassword] = useState('');
   const [message, setMessage] = useState('');
+  const { post } = useApi();
   const token = window.location.pathname.split('/').pop();
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage('');
-    try {
-      const res = await fetch('/api/auth/reset-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, newPassword }),
-      });
-      const data = await res.json();
-      setMessage(data.message);
-    } catch (err) {
-      setMessage('Reset failed');
-    }
+    const { data } = await post('/api/auth/reset-password', { token, newPassword });
+    setMessage(data?.message);
   };
   return (
     <div className="auth-page">

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import AiAvatar from './VoiceAiAvatar';
+import useApi from '../../../hooks/useApi';
 
 const VOICE_OPTIONS = [
   { label: 'The Rock (Male)', gender: 'male', keyword: 'rock', fallback: 'en-US' },
@@ -50,6 +51,7 @@ const VoiceAiChat = ({ legoAvatar, user }) => {
   const [legoMode, setLegoMode] = useState(true);
   const [listening, setListening] = useState(false);
   const [conversationActive, setConversationActive] = useState(false);
+  const { post } = useApi();
 
   // Load available voices
   useEffect(() => {
@@ -138,21 +140,12 @@ const VoiceAiChat = ({ legoAvatar, user }) => {
   const handleSendToAI = async (prompt) => {
     setAiLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('/api/ai/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ prompt, legoMode, history: messages }),
-      });
-      const data = await res.json();
-      if (res.ok && data.response) {
+      const { ok, data } = await post('/api/ai/chat', { prompt, legoMode, history: messages });
+      if (ok && data.response) {
         setMessages(msgs => [...msgs, { role: 'ai', text: data.response }]);
         speakAIResponse(data.response);
       } else {
-        setMessages(msgs => [...msgs, { role: 'ai', text: data.message || 'AI request failed.' }]);
+        setMessages(msgs => [...msgs, { role: 'ai', text: data?.message || 'AI request failed.' }]);
       }
     } catch (err) {
       setMessages(msgs => [...msgs, { role: 'ai', text: 'AI request failed.' }]);

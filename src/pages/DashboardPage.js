@@ -1,6 +1,5 @@
 import React, { useContext, useState, useEffect, useRef } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
 import './DashboardPage.css';
 import jsPDF from 'jspdf';
 import Cropper from 'react-easy-crop';
@@ -12,10 +11,13 @@ import SettingsSection from '../components/dashboard/SettingsSection';
 import VoiceAiChat from '../components/dashboard/voice/VoiceAiChat';
 import MosaicSessionLobby from '../components/dashboard/MosaicSessionLobby';
 import MosaicSessionCreator from '../components/dashboard/MosaicSessionCreator';
+import useApi from '../hooks/useApi';
+import useNavigation from '../hooks/useNavigation';
 
 function DashboardPage() {
   const { user, setUser, logout } = useContext(AuthContext);
-  const navigate = useNavigate();
+  const { get, post, put } = useApi();
+  const { goTo } = useNavigation();
   const [name, setName] = useState(user?.profile?.name || '');
   const [avatar, setAvatar] = useState(user?.profile?.avatar || '');
   const [editing, setEditing] = useState(false);
@@ -89,51 +91,25 @@ function DashboardPage() {
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
     setMessage('');
-    const token = localStorage.getItem('token');
-    try {
-      const res = await fetch('/api/user/profile', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ profile: { name, avatar } }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setUser(data);
-        setEditing(false);
-        setMessage('Profile updated!');
-      } else {
-        setMessage(data.message || 'Update failed');
-      }
-    } catch (err) {
-      setMessage('Update failed');
+    const { ok, data } = await put('/api/user/profile', { profile: { name, avatar } });
+    if (ok) {
+      setUser(data);
+      setEditing(false);
+      setMessage('Profile updated!');
+    } else {
+      setMessage(data?.message || 'Update failed');
     }
   };
 
   const handleThemeChange = async (newTheme) => {
     setTheme(newTheme);
     setThemeMsg('');
-    const token = localStorage.getItem('token');
-    try {
-      const res = await fetch('/api/user/theme', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ theme: newTheme }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setUser(data);
-        setThemeMsg('Theme updated!');
-      } else {
-        setThemeMsg(data.message || 'Theme update failed');
-      }
-    } catch (err) {
-      setThemeMsg('Theme update failed');
+    const { ok, data } = await put('/api/user/theme', { theme: newTheme });
+    if (ok) {
+      setUser(data);
+      setThemeMsg('Theme updated!');
+    } else {
+      setThemeMsg(data?.message || 'Theme update failed');
     }
   };
 
@@ -190,23 +166,12 @@ function DashboardPage() {
     formData.append('image', uploadedImage);
     formData.append('instructions', voiceText);
     formData.append('size', legoSize);
-    const token = localStorage.getItem('token');
-    try {
-      const res = await fetch('/api/lego-fy', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
-      const data = await res.json();
-      if (res.ok && data.legoImageUrl) {
-        setLegoImage(data.legoImageUrl);
-      } else {
-        setLegoImage(null);
-        setMessage(data.message || 'Failed to generate LEGO-fied image');
-      }
-    } catch (err) {
+    const { ok, data } = await post('/api/lego-fy', formData, { formData: true });
+    if (ok && data.legoImageUrl) {
+      setLegoImage(data.legoImageUrl);
+    } else {
       setLegoImage(null);
-      setMessage('Failed to generate LEGO-fied image');
+      setMessage(data?.message || 'Failed to generate LEGO-fied image');
     }
     setLegoLoading(false);
   };
@@ -214,7 +179,7 @@ function DashboardPage() {
   // Fix logout: redirect after logout
   const handleLogout = () => {
     logout();
-    navigate('/');
+    goTo('/');
   };
 
   // LEGO color palette (sample, can be expanded)
@@ -458,27 +423,17 @@ function DashboardPage() {
     const { blob } = await getCroppedImgWithPreview(cropImage, croppedAreaPixels);
     const formData = new FormData();
     formData.append('avatar', blob, 'avatar.jpg');
-    const token = localStorage.getItem('token');
-    try {
-      const res = await fetch('/api/user/avatar', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setUser(data);
-        setAvatar(data.profile.avatar || '');
-        setAvatarVersion(Date.now());
-        setMessage('Avatar updated!');
-        setCropModalOpen(false);
-        setCropImage(null);
-        setCroppedPreview(null);
-      } else {
-        setMessage(data.message || 'Avatar upload failed');
-      }
-    } catch (err) {
-      setMessage('Avatar upload failed');
+    const { ok, data } = await post('/api/user/avatar', formData, { formData: true });
+    if (ok) {
+      setUser(data);
+      setAvatar(data.profile.avatar || '');
+      setAvatarVersion(Date.now());
+      setMessage('Avatar updated!');
+      setCropModalOpen(false);
+      setCropImage(null);
+      setCroppedPreview(null);
+    } else {
+      setMessage(data?.message || 'Avatar upload failed');
     }
     setAvatarUploading(false);
   };
@@ -512,41 +467,21 @@ function DashboardPage() {
   // Join an existing mosaic session
   const handleJoinMosaicSession = async () => {
     setMosaicSessionStatus('Joining...');
-    const token = localStorage.getItem('token');
-    try {
-      const res = await fetch(`/api/mosaic/${mosaicSessionInput}/join`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (res.ok && data._id) {
-        setMosaicSessionId(data._id);
-        setMosaicSessionStatus('Joined mosaic session!');
-        setSelectedSection('mosaic-session');
-      } else {
-        setMosaicSessionStatus(data.message || 'Failed to join mosaic session');
-      }
-    } catch (err) {
-      setMosaicSessionStatus('Failed to join mosaic session');
+    const { ok, data } = await post(`/api/mosaic/${mosaicSessionInput}/join`);
+    if (ok && data._id) {
+      setMosaicSessionId(data._id);
+      setMosaicSessionStatus('Joined mosaic session!');
+      setSelectedSection('mosaic-session');
+    } else {
+      setMosaicSessionStatus(data?.message || 'Failed to join mosaic session');
     }
   };
 
   // Fetch user's mosaic sessions
   useEffect(() => {
     const fetchMySessions = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) return;
-      try {
-        const res = await fetch('/api/mosaic/mine', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setMyMosaicSessions(data);
-        }
-      } catch (err) {
-        // ignore
-      }
+      const { ok, data } = await get('/api/mosaic/mine');
+      if (ok) setMyMosaicSessions(data);
     };
     fetchMySessions();
   }, [mosaicSessionId, showMosaicCreator]);
