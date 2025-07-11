@@ -1,6 +1,5 @@
 import React, { useState, useRef } from 'react';
 import { FaUpload, FaImage, FaCog, FaPlay } from 'react-icons/fa';
-import useApi from '../../../hooks/useApi';
 
 function MosaicSessionCreator({ onCreateSession, onCancel }) {
   const [referenceImage, setReferenceImage] = useState(null);
@@ -12,7 +11,6 @@ function MosaicSessionCreator({ onCreateSession, onCancel }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const fileInputRef = useRef();
-  const { post } = useApi();
 
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
@@ -62,11 +60,21 @@ function MosaicSessionCreator({ onCreateSession, onCancel }) {
       formData.append('gridHeight', gridHeight);
       formData.append('tileSize', tileSize);
       formData.append('sessionName', sessionName);
-      const { ok, data } = await post('/api/mosaic', formData, { formData: true });
-      if (ok) {
-        onCreateSession(data._id);
+
+      const response = await fetch('/api/mosaic', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: formData,
+      });
+
+      if (response.ok) {
+        const session = await response.json();
+        onCreateSession(session._id);
       } else {
-        setError(data?.message || 'Failed to create session');
+        const errorData = await response.json();
+        setError(errorData.message || 'Failed to create session');
       }
     } catch (error) {
       console.error('Error creating session:', error);

@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import './AuthPage.css';
-import useApi from '../hooks/useApi';
-import useNavigation from '../hooks/useNavigation';
 
 function AuthPage() {
   const [mode, setMode] = useState('signup'); // 'signup' or 'login'
@@ -15,15 +13,22 @@ function AuthPage() {
   // Feedback
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const { post } = useApi();
-  const { goTo } = useNavigation();
 
   const handleSignup = async (e) => {
     e.preventDefault();
     setMessage('');
     setLoading(true);
-    const { data } = await post('/api/auth/signup', { email, password, profile: { name, avatar } });
-    setMessage(data?.message);
+    try {
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, profile: { name, avatar } }),
+      });
+      const data = await res.json();
+      setMessage(data.message);
+    } catch (err) {
+      setMessage('Signup failed');
+    }
     setLoading(false);
   };
 
@@ -31,12 +36,21 @@ function AuthPage() {
     e.preventDefault();
     setMessage('');
     setLoading(true);
-    const { ok, data } = await post('/api/auth/login', { email, password });
-    if (ok && data.token) {
-      localStorage.setItem('token', data.token);
-      goTo('/dashboard');
-    } else {
-      setMessage(data?.message || 'Login failed');
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (res.ok && data.token) {
+        localStorage.setItem('token', data.token);
+        window.location.href = '/dashboard';
+      } else {
+        setMessage(data.message || 'Login failed');
+      }
+    } catch (err) {
+      setMessage('Login failed');
     }
     setLoading(false);
   };

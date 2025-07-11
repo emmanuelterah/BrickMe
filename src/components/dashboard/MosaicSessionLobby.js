@@ -3,7 +3,6 @@ import { io } from 'socket.io-client';
 import FloatingChat from './FloatingChat';
 import MosaicCanvas from './MosaicCanvas';
 import { FaCrown, FaUser, FaUserFriends, FaCopy, FaDownload, FaShare, FaUsers, FaComments, FaCircle, FaInfoCircle } from 'react-icons/fa';
-import useApi from '../../../hooks/useApi';
 
 // Create socket with authentication
 const createSocket = () => {
@@ -305,21 +304,37 @@ function MosaicSessionLobby({ sessionId, userId, onLeave }) {
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
   const [chatOpen, setChatOpen] = useState(false);
-  const { get, post } = useApi();
 
   // Robust session fetcher
   const fetchSession = async (isMounted = true) => {
-    const { ok, data } = await get(`/api/mosaic/${sessionId}`);
-    if (ok && isMounted) {
-      setSession(data);
-      setTiles(data.tiles || []);
-      setParticipants(data.participants || []);
-      setReferenceImage(data.referenceImageUrl || null);
-      setGridWidth(data.gridWidth);
-      setGridHeight(data.gridHeight);
-      setStatus(data.status);
-      setHostUserId(data.hostUserId);
-      setAccuracy(data.accuracy);
+    try {
+      const response = await fetch(`/api/mosaic/${sessionId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (isMounted) {
+          setSession(data);
+          setParticipants(data.participants || []);
+          setChat(data.chatMessages || []);
+          setTiles(data.tiles || []); // Always set tiles from backend
+          setSelectedColor(data.colorPalette?.[0] || '#ffd700');
+        }
+      } else {
+        if (isMounted) {
+          setSession(null);
+          setTiles([]);
+        }
+        onLeave();
+      }
+    } catch (error) {
+      if (isMounted) {
+        setSession(null);
+        setTiles([]);
+      }
+      onLeave();
+    } finally {
+      if (isMounted) setLoading(false);
     }
   };
 
@@ -410,17 +425,23 @@ function MosaicSessionLobby({ sessionId, userId, onLeave }) {
   }, [sessionId, userId]);
 
   const fetchSessionData = async () => {
-    const { ok, data } = await get(`/api/mosaic/${sessionId}`);
-    if (ok) {
-      setSession(data);
-      setTiles(data.tiles || []);
-      setParticipants(data.participants || []);
-      setReferenceImage(data.referenceImageUrl || null);
-      setGridWidth(data.gridWidth);
-      setGridHeight(data.gridHeight);
-      setStatus(data.status);
-      setHostUserId(data.hostUserId);
-      setAccuracy(data.accuracy);
+    try {
+      const response = await fetch(`/api/mosaic/${sessionId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setParticipants(data.participants || []);
+        setTiles(data.tiles || []);
+        setSession(prev => ({
+          ...prev,
+          completedTiles: data.completedTiles,
+          accuracy: data.accuracy
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching session data:', error);
     }
   };
 
@@ -441,13 +462,53 @@ function MosaicSessionLobby({ sessionId, userId, onLeave }) {
 
   // Tile placement handlers
   const handleTilePlaced = async (x, y, color) => {
-    await post(`/api/mosaic/${sessionId}/tiles`, { x, y, color });
-    fetchSessionData();
+    // Optimistic update
+    setTiles(prev => {
+      const existingIndex = prev.findIndex(t => t.x === x && t.y === y);
+      if (existingIndex >= 0) {
+        const newTiles = [...prev];
+        newTiles[existingIndex] = { x, y, color, placedBy: userId, placedAt: new Date() };
+        return newTiles;
+      } else {
+        return [...prev, { x, y, color, placedBy: userId, placedAt: new Date() }];
+      }
+    });
+
+    // Persist to backend and update with backend data
+    try {
+      const response = await fetch(`/api/mosaic/${sessionId}/tiles`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify({ x, y, color }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Update the tile with backend data (ensures consistency)
+        setTiles(prev => {
+          const otherTiles = prev.filter(t => !(t.x === x && t.y === y));
+          return [...otherTiles, data.tile];
+        });
+        // Optionally update session stats if returned
+        if (data.completedTiles !== undefined && data.accuracy !== undefined) {
+          setSession(prev => prev ? { ...prev, completedTiles: data.completedTiles, accuracy: data.accuracy } : prev);
+        }
+      } else {
+        setToast('Failed to save tile to server.');
+        fetchSessionData();
+      }
+    } catch (err) {
+      setToast('Network error: tile not saved.');
+      fetchSessionData();
+    }
   };
 
-  const handleTileRemoved = async (x, y) => {
-    await post(`/api/mosaic/${sessionId}/tiles/remove`, { x, y });
-    fetchSessionData();
+  const handleTileRemoved = (x, y) => {
+    // Optimistic update - the socket event will confirm
+    setTiles(prev => prev.filter(t => !(t.x === x && t.y === y)));
   };
 
   // Check if current user is observer
