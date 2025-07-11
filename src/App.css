@@ -276,6 +276,6 @@ section {
   }
 }
 
-.theme-dark h1, .theme-dark h2, .theme-dark h3, .theme-dark h4, .theme-dark h5, .theme-dark h6, .theme-dark .fire-h1 {
+.theme-dark h1, .theme-dark h2, .theme-dark h3, .theme-dark h4, .theme-dark h5, .theme-dark h6, .theme-dark .fire-h1, .theme-dark .fire-p {
   color: #fff;
 }
