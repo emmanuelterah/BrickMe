@@ -3,7 +3,7 @@ import { io } from 'socket.io-client';
 import FloatingChat from './FloatingChat';
 import MosaicCanvas from './MosaicCanvas';
 import { FaCrown, FaUser, FaUserFriends, FaCopy, FaDownload, FaShare, FaUsers, FaComments, FaCircle, FaInfoCircle } from 'react-icons/fa';
-import API_BASE from '../../../api';
+import API_BASE from '../../api';
 
 // Create socket with authentication
 const createSocket = () => {
